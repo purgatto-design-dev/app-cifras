@@ -751,7 +751,10 @@ DB = normalizeDB(DB);
    Tabela user_data: uma linha por conta, com todos os dados do app (cifras, setlists, anotações, preferências).
    O aparelho guarda uma cópia (funciona sem internet) e envia para a nuvem logo depois de cada mudança. */
 const CFG = window.APP_CONFIG || null;
-const sb = CFG && window.supabase ? window.supabase.createClient(CFG.url, CFG.anon) : null;
+// implicit: o link do e-mail traz a sessão no endereço, então funciona até se for aberto em outro aparelho
+const sb = CFG && window.supabase ? window.supabase.createClient(CFG.url, CFG.anon, {auth:{flowType:'implicit', detectSessionInUrl:true, persistSession:true, autoRefreshToken:true}}) : null;
+// link vencido ou já usado: a Supabase volta com o erro no endereço
+const LINK_ERR = (() => { try { const h = new URLSearchParams(location.hash.slice(1)); return h.get('error_description') || h.get('error') || ''; } catch(e){ return ''; } })();
 let cloudUser = null, pushT = null, sync = {state: sb ? 'idle' : 'local', at: 0};
 function cloudPush(){
   if(!sb || !cloudUser || !DB.user || DB.user.guest) return;
@@ -855,7 +858,8 @@ SCREENS.auth = () => {
   } else if(a.step === 'code'){
     body = `<button class="link-b" data-act="authstep" data-v="login" style="color:var(--muted);margin-left:-4px">${ic('back','sm')} Trocar e-mail</button>
       <h1 style="margin-top:6px">Confira seu e-mail</h1>
-      <p class="sub">Mandamos um código de ${OTP_LEN} números para <b style="color:var(--text)">${esc(a.email)}</b>. Ele vale por 10 minutos.</p>
+      ${sb ? `<p class="sub">Mandamos um e-mail para <b style="color:var(--text)">${esc(a.email)}</b>. Toque em <b style="color:var(--text)">Entrar</b> no e-mail: o Octave abre já com a sua conta. Se o e-mail trouxer um código, digite aqui.</p>`
+        : `<p class="sub">Mandamos um código de ${OTP_LEN} números para <b style="color:var(--text)">${esc(a.email)}</b>. Ele vale por 10 minutos.</p>`}
       <div class="stack" style="margin-top:20px">
         <div class="field"><label for="a-code">Código</label><input class="input code-in" id="a-code" inputmode="numeric" autocomplete="one-time-code" maxlength="${sb ? 10 : OTP_LEN}" pattern="[0-9]*" placeholder="${'•'.repeat(OTP_LEN)}"></div>
         ${a.err ? `<p class="aerr" role="alert">${a.err}</p>` : ''}
@@ -1782,13 +1786,14 @@ const A = {
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)){ S.auth = {...S.auth, email:e, err:'Confira o e-mail: ele precisa ter @ e um domínio, como voce@email.com.'}; render(); document.getElementById('a-email')?.focus(); return; }
     S.auth = {step:'login', email:e, busy:true}; render();
     if(sb){
-      const {error} = await sb.auth.signInWithOtp({email:e, options:{shouldCreateUser:true}});
+      // o link do e-mail volta para este mesmo endereço, e o cliente da Supabase entra sozinho ao abrir
+      const {error} = await sb.auth.signInWithOtp({email:e, options:{shouldCreateUser:true, emailRedirectTo: location.origin + '/'}});
       if(error){ S.auth = {step:'login', email:e, err: authErr(error)}; render(); return; }
       S.auth = {step:'code', email:e}; render(); document.getElementById('a-code')?.focus(); return;
     }
     setTimeout(() => { S.auth = {step:'code', email:e}; render(); document.getElementById('a-code')?.focus(); }, 700); },
   resend: async () => { S.auth.err = ''; render();
-    if(sb){ const {error} = await sb.auth.signInWithOtp({email:S.auth.email}); if(error){ S.auth.err = authErr(error); render(); } else toast('Código reenviado para ' + S.auth.email); return; }
+    if(sb){ const {error} = await sb.auth.signInWithOtp({email:S.auth.email, options:{emailRedirectTo: location.origin + '/'}}); if(error){ S.auth.err = authErr(error); render(); } else toast('E-mail reenviado para ' + S.auth.email); return; }
     toast('Simulado: código reenviado para ' + S.auth.email); },
   verifycode: async () => { const v = document.getElementById('a-code').value.replace(/\D/g,'');
     if(sb ? (v.length < 6 || v.length > 10) : v.length !== OTP_LEN){ S.auth.err = `O código tem ${OTP_LEN} números.`; render(); document.getElementById('a-code')?.focus(); return; }
@@ -1889,6 +1894,8 @@ document.fonts?.ready.then(() => sizeInk());
         catch(e){ cloudUser = session.user; sync = {state:'error', at:Date.now(), msg:'sem internet'}; }
       } else if(DB.user && !DB.user.guest){ DB.user = null; } // sessão vencida: pede o e-mail de novo
     } catch(e){}
+    if(LINK_ERR && !cloudUser){ S.auth = {step:'login', err:'Esse link de entrada venceu ou já foi usado. Peça outro e toque em Entrar no e-mail mais recente.'}; }
+    if(location.hash) history.replaceState(null, '', location.pathname); // limpa o endereço depois de entrar
     S.booting = false;
   }
   render();
