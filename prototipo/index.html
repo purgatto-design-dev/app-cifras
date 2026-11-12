@@ -751,6 +751,9 @@ DB = normalizeDB(DB);
    Tabela user_data: uma linha por conta, com todos os dados do app (cifras, setlists, anotações, preferências).
    O aparelho guarda uma cópia (funciona sem internet) e envia para a nuvem logo depois de cada mudança. */
 const CFG = window.APP_CONFIG || null;
+/* LOGIN_ON = false: o app abre direto, sem tela de conta (decisão do Rafa em 2026-11-12, até configurarmos
+   o e-mail com calma). O código do login continua aqui; para ligar, troque para true. */
+const LOGIN_ON = false;
 // implicit: o link do e-mail traz a sessão no endereço, então funciona até se for aberto em outro aparelho
 const sb = CFG && window.supabase ? window.supabase.createClient(CFG.url, CFG.anon, {auth:{flowType:'implicit', detectSessionInUrl:true, persistSession:true, autoRefreshToken:true}}) : null;
 // link vencido ou já usado: a Supabase volta com o erro no endereço
@@ -806,6 +809,8 @@ function renderNav(){
 }
 function render(){
   // Ordem de entrada: conta (entrar → código → primeiro acesso) → escolha do modo → app
+  // Login desligado por enquanto (decisão do Rafa): entra direto, com os dados salvos no aparelho
+  if(!LOGIN_ON && (!DB.user || !DB.user.name)){ DB.user = {guest:true, name:'Você', insts:[]}; try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch(e){} }
   const needAuth = !DB.user || !DB.user.name;
   const c = S.booting ? {name:'boot'} : needAuth ? {name:'auth'} : S.choosing ? {name:'mode'} : cur();
   const stageSong = !!(c.name === 'song' && V?.ctx?.stage); // música aberta pela biblioteca no modo palco
@@ -888,7 +893,7 @@ SCREENS.mode = () => {
     <span class="oi">${ic(icon)}</span><b>${t}</b><span>${d}</span>
     <span class="mode-tabs">${DB.mode===v?'<span class="pill lime" style="margin-right:6px">Último usado</span>':''}${tabs}</span></button>`;
   return `<div class="mode-wrap"><div class="mode-in">
-    <div class="label" style="color:var(--lime)">${DB.user?.guest ? 'Octave · sem conta' : 'Oi, ' + esc(DB.user?.name || '')}</div>
+    <div class="label" style="color:var(--lime)">${DB.user?.guest && (LOGIN_ON || DB.user.name === 'Você') ? 'Octave' : 'Oi, ' + esc(DB.user?.name || '')}</div>
     <h1>Como você vai tocar hoje?</h1>
     <p class="sub">Dá para trocar depois, no Perfil.</p>
     <div class="mode-grid">
@@ -1317,7 +1322,11 @@ SCREENS.profile = () => `<div class="wrap"><div class="head"><div><div class="la
     <div class="member"><div class="av" style="background:var(--lime);color:var(--lime-ink)">${esc((DB.user.name||'V')[0].toUpperCase())}</div>
       <div class="mm"><b>${esc(DB.user.name)}</b><span>${DB.user.guest ? 'Sem conta · seus dados ficam só neste aparelho' : `${esc(instList(DB.user))} · ${esc(DB.user.email || METHOD_NAME[DB.user.method] || '')}`}</span></div></div>
     ${DB.user.guest ? '' : syncHTML()}
-    ${DB.user.guest ? `<div class="note">Crie sua conta para entrar em bandas e ter suas cifras em qualquer aparelho. O que você já salvou continua aqui.</div>
+    ${DB.user.guest && !LOGIN_ON ? `<div class="note">Suas cifras ficam salvas neste aparelho, neste navegador. Entrar com conta (e ver tudo em qualquer aparelho) chega em breve.</div>
+      <div class="field"><label for="p-name">Seu nome</label><input class="input" id="p-name" value="${esc(DB.user.name === 'Você' ? '' : DB.user.name)}" placeholder="Como te chamam?"></div>
+      <div class="label" style="margin-top:8px">Instrumento</div><div class="chipwrap">${INSTR.map(i => { const on = (DB.user.insts||[]).includes(i);
+        return `<button class="fbtn ${on?'on':''}" data-act="setinst" data-v="${i}" aria-pressed="${on}">${i}</button>`; }).join('')}</div>`
+      : DB.user.guest ? `<div class="note">Crie sua conta para entrar em bandas e ter suas cifras em qualquer aparelho. O que você já salvou continua aqui.</div>
       <button class="btn lime block" data-act="logout" data-v="upgrade">${ic('user','sm')} Criar conta ou entrar</button>`
       : `<div class="label" style="margin-top:8px">Instrumento</div><div class="chipwrap">${INSTR.map(i => { const on = (DB.user.insts||[]).includes(i);
         return `<button class="fbtn ${on?'on':''}" data-act="setinst" data-v="${i}" aria-pressed="${on}">${i}</button>`; }).join('')}</div>`}
@@ -1818,8 +1827,8 @@ const A = {
     S.auth = {step:'login'}; S.choosing = true; S.stack = [{name:'lib'}]; S.tab = 'lib'; stopScroll(); render();
     if(!up) toast(sb ? 'Você saiu. Suas cifras ficam salvas na sua conta.' : 'Você saiu da conta'); },
   setinst: el => { DB.user.insts = toggleIn(DB.user.insts || [], el.dataset.v); save(); render(); },
-  joinband: () => DB.user?.guest ? toast('Para entrar numa banda, crie sua conta no Perfil') : openModal({name:'input', title:'Entrar numa banda', label:'Código de convite', ph:'Ex.: K7Q-42M', cta:'Pedir para entrar', kind:'join'}),
-  newband: () => DB.user?.guest ? toast('Para criar uma banda, crie sua conta no Perfil') : openModal({name:'input', title:'Criar banda', label:'Nome da banda', ph:'Ex.: Ministério Aurora', cta:'Criar', kind:'band'}),
+  joinband: () => DB.user?.guest && LOGIN_ON ? toast('Para entrar numa banda, crie sua conta no Perfil') : openModal({name:'input', title:'Entrar numa banda', label:'Código de convite', ph:'Ex.: K7Q-42M', cta:'Pedir para entrar', kind:'join'}),
+  newband: () => DB.user?.guest && LOGIN_ON ? toast('Para criar uma banda, crie sua conta no Perfil') : openModal({name:'input', title:'Criar banda', label:'Nome da banda', ph:'Ex.: Ministério Aurora', cta:'Criar', kind:'band'}),
   minput: () => {
     const v = document.getElementById('m-in').value.trim(), k = S.modal.kind; if(!v){ toast('Preencha o campo para continuar'); return; }
     if(k==='folder'){ if(!DB.folders.includes(v)) DB.folders.push(v); S.f.folder = v; }
@@ -1861,6 +1870,8 @@ document.addEventListener('pointerdown', e => { const p = e.target.closest('#loc
   if(t==='pointerleave' && e.target.id!=='lockpill') return;
   clearTimeout(holdT); document.getElementById('lockpill')?.classList.remove('hold'); }, true));
 document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if(el && A[el.dataset.act]) A[el.dataset.act](el, e); });
+/* Nome no Perfil (sem login): salva ao sair do campo */
+document.addEventListener('change', e => { if(e.target.id === 'p-name'){ DB.user.name = e.target.value.trim() || 'Você'; save(); render(); toast('Nome salvo'); } });
 /* Conta: Enter envia; o código entra sozinho quando chegam os 6 números (inclusive pelo preenchimento automático) */
 document.addEventListener('keydown', e => { if(e.key !== 'Enter') return;
   const act = {'a-email':'sendcode', 'a-code':'verifycode', 'a-name':'finishonboard'}[e.target.id]; if(act){ e.preventDefault(); A[act](); } });
