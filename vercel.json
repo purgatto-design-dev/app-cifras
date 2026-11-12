@@ -1,0 +1,15 @@
+{
+  "buildCommand": "node scripts/build-web.mjs",
+  "outputDirectory": "dist",
+  "framework": null,
+  "installCommand": "",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

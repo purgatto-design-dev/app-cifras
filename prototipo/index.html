@@ -1,0 +1,1896 @@
+<title>App de Cifras</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Noto+Music&display=swap">
+<style>
+/* Layout: app de uma tela. Celular = conteúdo + barra inferior; tablet/desktop = trilho lateral + conteúdo.
+   Tema único escuro por escolha (palco). Cifra em fonte mono para alinhar acorde sobre letra. */
+:root{
+  color-scheme:dark;
+  --bg:#0D0E0B; --surface:#161813; --surface-2:#1F221B; --line:#2C3026;
+  --text:#F7F8F2; --muted:#C0C2B8; --dim:#8A8D82;
+  --lime:#D5FF40; --lime-ink:#12150A; --lime-soft:rgba(213,255,64,.12);
+  --danger:#FF7A66; --info:#7FD8FF;
+  --f-ui:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --r-sm:10px; --r:16px; --r-lg:22px;
+}
+html{box-sizing:border-box;height:100%;background:var(--bg)}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-tap-highlight-color:transparent;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:8px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.sm{width:18px;height:18px}
+
+.app{display:flex;flex-direction:column;height:100%}
+.view{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px;max-width:980px;margin:0 auto}
+
+/* Navegação */
+.nav{order:2;display:flex;justify-content:space-around;align-items:center;background:var(--surface);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.choosing .nav{display:none}
+.nav-b{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:52px;min-height:48px;justify-content:center;color:var(--dim);font-size:11px;font-weight:500;border-radius:12px}
+.nav-b.on{color:var(--lime)}
+.nav-plus{width:52px;height:52px;border-radius:18px;background:var(--lime);color:var(--lime-ink);display:grid;place-items:center;margin-top:-18px;box-shadow:0 6px 20px rgba(213,255,64,.25)}
+.nav-plus svg.i{stroke-width:2.5}
+@media (min-width:768px){
+  .app{flex-direction:row}
+  .nav{order:-1;flex-direction:column;justify-content:flex-start;gap:6px;width:92px;border-top:0;border-right:1px solid var(--line);padding:20px 8px}
+  .nav-plus{margin:6px 0 10px;order:-1}
+  .nav-brand{display:block!important}
+}
+.nav-brand{display:none;font-weight:700;font-size:12px;color:var(--lime);margin-bottom:8px;letter-spacing:.04em}
+
+/* Tipografia e peças */
+h1{font-size:26px;line-height:1.2;font-weight:700;margin:0;text-wrap:balance}
+h2{font-size:18px;font-weight:600;margin:0}
+.sub{color:var(--muted);font-size:13px;margin:2px 0 0}
+.label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:14px;font-weight:600;font-size:14px;background:var(--surface-2);border:1px solid var(--line)}
+.btn.lime{background:var(--lime);color:var(--lime-ink);border-color:var(--lime)}
+.btn.ghost{background:transparent}
+.btn.block{width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.icon-b{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;color:var(--text)}
+.icon-b:hover{background:var(--surface-2)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;color:var(--muted)}
+.input{min-height:46px;border-radius:14px;background:var(--surface);border:1px solid var(--line);padding:0 14px;width:100%}
+.input:focus{border-color:var(--lime);outline:none}
+textarea.input{padding:12px 14px;min-height:220px;font-family:var(--f-mono);font-size:13px;line-height:1.55;resize:vertical}
+.search{position:relative}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--dim)}
+.search .input{padding-left:44px}
+/* Filtros: botões que abrem popup (nada escondido em rolagem lateral) */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.fbtn{min-height:44px;padding:0 12px 0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:500;font-size:13px;display:inline-flex;align-items:center;gap:6px;max-width:100%}
+.fbtn b{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.fbtn.on{border-color:var(--lime);color:var(--lime);background:var(--lime-soft)}
+.fbtn.on b{color:var(--lime)}
+.fbtn.ghost{background:transparent;border-color:transparent}
+.sh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+.sh h2 small{font-size:13px;color:var(--dim);font-weight:500;margin-left:6px}
+.link-b{min-height:44px;padding:0 4px;color:var(--lime);font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.olist{display:flex;flex-direction:column;gap:6px}
+.olist.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
+.orow{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:14px;background:var(--surface-2);border:1px solid transparent;text-align:left;width:100%;font-weight:500}
+.orow .c{margin-left:auto;color:var(--dim);font-size:12px}
+.orow.on{border-color:var(--lime);color:var(--lime)}
+.olist.grid .orow{justify-content:center;font-family:var(--f-mono);font-weight:700}
+.olist.grid .orow .c{margin-left:0}
+.rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:768px){.rgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.rcard{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:14px;border-radius:var(--r);background:var(--surface);border:1px solid transparent;text-align:left;min-width:0}
+.rcard:hover{border-color:var(--line)}
+.rcard .song-t,.rcard .song-s{display:block;width:100%}
+.keytile.sm{width:40px;height:40px;font-size:14px;border-radius:12px}
+
+/* Conta: entrar sem senha. Celular: só o formulário. Tablet deitado/desktop: amostra de cifra ao lado. */
+.auth-wrap{min-height:100%;display:grid}
+@media (min-width:900px){.auth-wrap{grid-template-columns:1fr 1fr}}
+.auth-side{display:none}
+@media (min-width:900px){.auth-side{display:flex;flex-direction:column;justify-content:center;gap:24px;padding:48px;background:var(--surface);border-right:1px solid var(--line)}}
+.auth-art{font-family:var(--f-mono);font-size:30px;line-height:1.5}
+.auth-art .sec{font-size:13px}
+.auth-art b.c{color:var(--lime);font-weight:700}
+.auth-tag{color:var(--muted);font-size:15px;max-width:340px;margin:0}
+.auth-main{display:grid;place-items:center;padding:40px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
+.auth-in{width:100%;max-width:400px;display:flex;flex-direction:column}
+.auth-in h1{font-size:30px;margin:6px 0 6px}
+.auth-sso{justify-content:flex-start;padding:0 18px;min-height:52px;border-radius:16px}
+.or{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:12px;margin:4px 0}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.aerr{color:var(--danger);font-size:13px;margin:0}
+.code-in{font-family:var(--f-mono);font-size:26px;letter-spacing:.5em;text-align:center;min-height:60px}
+.spin.sm{width:18px;height:18px;border-width:2px;margin:0;display:inline-block;border-top-color:var(--lime-ink)}
+
+/* Tela de escolha do modo */
+.mode-wrap{min-height:100%;display:grid;place-items:center;padding:40px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.mode-in{width:100%;max-width:760px}
+.mode-in h1{font-size:30px;margin-top:6px}
+.mode-grid{display:grid;gap:14px;margin-top:26px}
+@media (min-width:600px){.mode-grid{grid-template-columns:1fr 1fr}}
+.mode-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:22px;border-radius:24px;background:var(--surface);border:1px solid var(--line);min-height:210px}
+.mode-card:hover{border-color:var(--lime)}
+.mode-card .oi{width:56px;height:56px;border-radius:18px;background:var(--lime);color:var(--lime-ink);display:grid;place-items:center;margin-bottom:10px}
+.mode-card .oi svg.i{width:26px;height:26px}
+.mode-card b{font-size:20px;font-weight:700}
+.mode-card span{color:var(--muted)}
+.mode-card .mode-tabs{margin-top:auto;padding-top:12px;font-size:12px;color:var(--dim)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.lime{color:var(--lime);border-color:rgba(213,255,64,.4)}
+.pill.warn{color:var(--danger);border-color:rgba(255,122,102,.45)}
+.note{font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:10px 12px}
+
+/* Biblioteca */
+.list{display:grid;gap:10px}
+@media (min-width:900px){.list.two{grid-template-columns:1fr 1fr}}
+.song{display:flex;align-items:center;gap:14px;text-align:left;padding:12px;border-radius:var(--r);background:var(--surface);border:1px solid transparent;width:100%;min-width:0}
+.song:hover{border-color:var(--line)}
+.keytile{width:52px;height:52px;border-radius:14px;background:var(--surface-2);display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:17px;color:var(--lime);flex:none}
+.song-meta{flex:1;min-width:0;display:flex;flex-direction:column}
+.song-t{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song-s{color:var(--dim);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{text-align:center;padding:40px 16px;color:var(--muted)}
+.empty svg{width:40px;height:40px;color:var(--dim);margin-bottom:8px}
+
+/* Visualizador */
+.topbar{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;gap:6px;padding:8px max(8px,env(safe-area-inset-right,0px)) 8px max(8px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+.topbar .t{flex:1;min-width:0}
+.topbar .t b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .t span{display:block;font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vhead{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.vhead .topbar{position:static;border-bottom:0}
+.keypill{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:12px;color:var(--muted);white-space:nowrap;flex:none;position:relative}
+.keypill b{font-family:var(--f-mono);color:var(--lime);font-size:15px}
+.keypill .dot,.step .val .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--info)}
+@media (max-width:479px){.hide-s{display:none}}
+
+/* Botão de ajustes (canto inferior direito) e popup */
+:root{--fab-b:calc(77px + env(safe-area-inset-bottom,0px))}
+@media (min-width:768px){:root{--fab-b:24px}}
+.performing{--fab-b:calc(92px + env(safe-area-inset-bottom,0px))}
+.performing.nobar{--fab-b:calc(24px + env(safe-area-inset-bottom,0px))}
+/* Trava de palco: cobre a tela; só segurando o botão destrava */
+.lockcatch{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--fab-b) + 4px)}
+.lockpill{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 20px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-weight:600;font-size:13px;box-shadow:0 8px 28px rgba(0,0,0,.55);touch-action:none;user-select:none;-webkit-user-select:none}
+.lockpill::before{content:"";position:absolute;inset:0;background:var(--lime-soft);transform:scaleX(0);transform-origin:left}
+.lockpill.hold::before{transform:scaleX(1);transition:transform .7s linear}
+.lockpill.nudge{animation:nudge .35s}
+@keyframes nudge{30%{transform:translateX(-6px)}60%{transform:translateX(6px)}}
+.count{position:fixed;inset:0;z-index:50;display:grid;place-items:center;font-size:120px;font-weight:700;color:var(--lime);background:rgba(13,14,11,.55);pointer-events:none}
+/* Diagramas */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-bottom:18px;font-family:var(--f-ui)}
+.dcard{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.dcard b{font-family:var(--f-mono);color:var(--lime);font-size:14px}
+svg.diag .dl{stroke:var(--muted);stroke-width:1}
+svg.diag .dd{fill:var(--lime)}
+svg.diag .do{fill:none;stroke:var(--muted);stroke-width:1.3}
+svg.diag .dm{fill:var(--muted);font-size:10px;text-anchor:middle;font-family:var(--f-ui)}
+svg.diag .dn{fill:var(--muted);font-size:9px;font-family:var(--f-ui)}
+.dbig{display:flex;justify-content:center;padding:6px 0 10px}
+/* Setlist editável */
+.sl-item.edit{flex-wrap:wrap}
+.sl-ctl{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding-left:34px;flex-wrap:wrap}
+.step button:disabled{opacity:.3;cursor:not-allowed}
+/* Editor por toque */
+.tapedit{font-family:var(--f-mono);font-size:15px;line-height:1.5}
+.te-line{margin:.15em 0 .35em}
+.tw{display:inline-block;white-space:nowrap}
+.tc{position:relative;display:inline-block;padding-top:1.35em;min-width:1ch;cursor:pointer;border-radius:4px}
+.tc:hover{background:var(--surface-2)}
+.tc.has{background:var(--lime-soft)}
+.tch{position:absolute;top:0;left:0;font-style:normal;color:var(--lime);font-weight:700;white-space:nowrap;pointer-events:none}
+.te-plain{white-space:pre-wrap;color:var(--muted);min-height:1.5em}
+.te-chords{display:flex;flex-wrap:wrap;gap:6px;margin:.3em 0}
+.te-chip{min-height:44px;min-width:44px;padding:0 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-family:var(--f-mono);font-weight:700;color:var(--lime)}
+.te-chip.add{color:var(--muted)}
+.te-chip.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime)}
+.chipwrap{display:flex;flex-wrap:wrap;gap:6px}
+.fab-zone{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:var(--fab-b);z-index:22;display:flex;align-items:center;gap:10px}
+.fab{position:relative;width:56px;height:56px;border-radius:18px;background:var(--lime);color:var(--lime-ink);display:grid;place-items:center;box-shadow:0 8px 28px rgba(0,0,0,.55)}
+.fab svg.i{width:24px;height:24px;stroke-width:2.2}
+.fab.open{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+.fab .badge{position:absolute;top:9px;right:9px;width:9px;height:9px;border-radius:50%;background:var(--info);box-shadow:0 0 0 2px var(--lime)}
+.mini{width:52px;height:52px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);color:var(--text);display:grid;place-items:center;box-shadow:0 8px 28px rgba(0,0,0,.55)}
+.mini[hidden]{display:none}
+.mini.on{color:var(--lime);border-color:rgba(213,255,64,.5)}
+.pop-catch{position:fixed;inset:0;z-index:21}
+.pop{position:fixed;z-index:23;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(var(--fab-b) + 68px);width:min(360px,calc(100vw - 32px));max-height:calc(100dvh - var(--fab-b) - 150px);overflow-y:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:22px;padding:4px 14px 14px;box-shadow:0 16px 48px rgba(0,0,0,.6)}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:62px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.prow b{display:block;font-weight:600;font-size:14px}
+.prow .h{display:block;font-size:12px;color:var(--dim)}
+.step{display:flex;align-items:center;gap:4px;flex:none}
+.step button{width:44px;height:44px;border-radius:12px;background:var(--surface);display:grid;place-items:center;font-weight:700;font-size:13px}
+.step button.on{background:var(--lime);color:var(--lime-ink)}
+.step .val{font-family:var(--f-mono);font-weight:700;color:var(--lime);min-width:46px;text-align:center;font-size:16px;position:relative;line-height:44px}
+.step .val.plain{color:var(--text)}
+.step .val .dot{top:4px;right:2px}
+.pnote{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:10px 0;border-bottom:1px solid var(--line)}
+.pnote .dot{width:7px;height:7px;border-radius:50%;background:var(--info)}
+.pnote button{font-family:var(--f-mono);font-weight:700;color:var(--info);border:1px solid rgba(127,216,255,.4);border-radius:8px;padding:2px 10px;min-height:36px}
+.pop .btn.block{margin-top:14px}
+.banner{margin:10px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;align-items:center;background:var(--lime-soft);border:1px solid rgba(213,255,64,.35);color:var(--lime);border-radius:12px;padding:10px 12px;font-size:12px;font-weight:500}
+.sheet-scroll{overflow-x:hidden;padding:18px max(16px,env(safe-area-inset-right,0px)) 160px max(16px,env(safe-area-inset-left,0px))}
+.sheet-wrap{position:relative;width:100%;font-family:var(--f-mono);line-height:1.6}
+.sheet-wrap.blank{min-height:1400px;background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:24px 24px}
+/* A cifra quebra a linha (nada de rolar para o lado); só a tablatura, que não pode quebrar, rola no próprio bloco */
+.sheet{color:var(--text);padding-bottom:20px}
+.ln{min-height:1.6em;white-space:pre-wrap;overflow-wrap:anywhere}
+.sheet b.c{color:var(--lime);font-weight:700;cursor:pointer}
+.sheet .n{color:var(--dim)}
+.ln.pair{white-space:normal;margin:.1em 0 .25em}
+.grp{display:inline-flex;align-items:flex-end;vertical-align:bottom}
+.cell{display:inline-flex;flex-direction:column}
+.cell b.c,.cell .n,.cell .c0{white-space:pre;line-height:1.3}
+.cell b.c,.cell .n{padding-right:.7ch}
+.cell.free b.c,.cell.free .n{width:0;overflow:visible;padding-right:0}
+.cell .ly{white-space:pre;line-height:1.45}
+.tabblk{overflow-x:auto;margin:.2em 0;scrollbar-width:thin}
+.tabblk .ln{white-space:pre;overflow-wrap:normal;width:max-content}
+.ln.tab{color:var(--muted)}
+.sheet.cols2{column-count:2;column-gap:56px}
+.sheet.cols2 .part{break-inside:avoid}
+.sec{display:inline-block;font-family:var(--f-ui);font-weight:600;font-size:.72em;letter-spacing:.06em;text-transform:uppercase;color:var(--lime-ink);background:var(--muted);border-radius:6px;padding:0 .6em;margin:.9em 0 .2em;line-height:1.7}
+.sec-row .sec{margin-right:1ch}
+canvas.ink{position:absolute;inset:0;pointer-events:none;touch-action:auto}
+.editing canvas.ink{pointer-events:auto;touch-action:none;cursor:crosshair}
+.editing.tool-hand canvas.ink,.editing.tool-note canvas.ink{pointer-events:none}
+/* Partitura: papel claro como a folha pautada impressa */
+.scorewrap{font-family:var(--f-ui)}
+.paper{background:#FBFBF8;color:#16170F;border-radius:6px;padding:28px 20px 48px;margin:0 auto;max-width:100%;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+.paper-title,.paper-comp{display:block;margin:0 auto;text-align:center;color:#16170F;font-family:var(--f-ui);min-height:36px;padding:2px 12px;border-radius:8px}
+.paper-title{font-size:20px;font-weight:600}
+.paper-comp{font-size:13px;color:#55574C}
+.paper-title.empty,.paper-comp.empty{color:#A3A597;font-weight:400;border-bottom:1px dashed #C9CABF;border-radius:0;min-width:60%}
+.paper-tempo{font-size:13px;color:#55574C;margin:8px 0 4px}
+svg.sys{display:block;overflow:visible;margin-top:2px}
+svg.sys .st{stroke:#2A2B24;stroke-width:1}
+svg.sys .bar{stroke:#16170F;stroke-width:1.4}
+svg.sys .bar.over{stroke:#D24B37;stroke-width:2}
+svg.sys .head{fill:#16170F}
+svg.sys .head.open{fill:#FBFBF8;stroke:#16170F;stroke-width:1.6}
+svg.sys .stem{stroke:#16170F;stroke-width:1.3}
+svg.sys .flag{fill:none;stroke:#16170F;stroke-width:1.6;stroke-linecap:round}
+svg.sys .ink-f{fill:#16170F}
+svg.sys .mus{fill:#16170F;font-family:'Noto Music','Segoe UI Symbol','Apple Symbols',serif}
+svg.sys .tsig{fill:#16170F;font-family:Georgia,'Times New Roman',serif;font-weight:700}
+svg.sys .caret{stroke:#1E6BD6;stroke-width:2.5;stroke-dasharray:4 3}
+svg.sys .selbg{fill:rgba(30,107,214,.14);stroke:#1E6BD6;stroke-width:1.2}
+svg.sys .nt.pl .head,svg.sys .nt.pl .stem,svg.sys .nt.pl .flag{fill:#1E6BD6;stroke:#1E6BD6}
+.editing.tool-note svg.sys{cursor:crosshair}
+.mus{font-family:'Noto Music','Segoe UI Symbol','Apple Symbols',serif}
+.mus.big{font-size:26px;line-height:1}
+.npal{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:0 max(12px,env(safe-area-inset-right,0px)) 6px max(12px,env(safe-area-inset-left,0px))}
+.nb{min-width:44px;height:44px;padding:0 10px;border-radius:12px;background:var(--surface);color:var(--text);font-weight:600;font-size:13px;display:grid;place-items:center}
+.nb .mus{font-size:22px;line-height:1}
+.nb.on{background:var(--lime);color:var(--lime-ink)}
+.npal .sep{width:1px;height:28px;background:var(--line);margin:0 4px}
+.nstatus{margin:0;padding:0 max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));font-size:12px;color:var(--muted)}
+
+/* Modo edição: ferramentas numa faixa sob o título (sem rolagem lateral) */
+.edstrip{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:0 max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px))}
+.edstrip .tb{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:var(--muted);background:var(--surface);flex:none}
+.edstrip .tb.on{background:var(--lime);color:var(--lime-ink)}
+.edstrip .sep{width:1px;height:28px;background:var(--line);margin:0 2px;flex:none}
+.edstrip .sw{width:32px;height:32px;border-radius:50%;flex:none;border:2px solid transparent}
+.edstrip .sw.on{border-color:var(--text);box-shadow:0 0 0 2px var(--bg) inset}
+.layer-tag{flex:none;font-size:11px;font-weight:700;padding:4px 10px;color:var(--lime);white-space:nowrap;border:1px solid rgba(213,255,64,.4);border-radius:999px}
+.topbar .btn{min-height:44px;padding:0 14px;flex:none}
+
+/* Modal */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
+.modal{width:100%;max-height:92%;overflow-y:auto;background:var(--surface);border-radius:24px 24px 0 0;border:1px solid var(--line);border-bottom:0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal .grab{width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
+@media (min-width:768px){.scrim{align-items:center}.modal{max-width:560px;border-radius:24px;border-bottom:1px solid var(--line);padding:22px 24px 24px}.modal .grab{display:none}}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.opt{display:flex;align-items:center;gap:14px;text-align:left;width:100%;padding:14px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line);min-height:64px}
+.opt:hover:not(:disabled){border-color:var(--lime)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt .oi{width:44px;height:44px;border-radius:14px;background:var(--bg);display:grid;place-items:center;color:var(--lime);flex:none}
+.opt b{display:block;font-weight:600;font-size:15px}
+.opt span{display:block;font-size:12px;color:var(--muted)}
+.opt.lime .oi{background:var(--lime);color:var(--lime-ink)}
+.fmt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fmt-grid .opt{flex-direction:column;align-items:flex-start;gap:10px;min-height:120px}
+.spin{width:36px;height:36px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--lime);animation:sp 0.8s linear infinite;margin:10px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Banda / palco */
+.card{background:var(--surface);border-radius:var(--r);padding:16px;border:1px solid transparent;text-align:left;width:100%;display:block}
+button.card:hover{border-color:var(--line)}
+.seg{display:flex;background:var(--surface);border-radius:14px;padding:4px;gap:4px;margin-bottom:16px}
+.seg button{flex:1;min-height:40px;border-radius:10px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--surface-2);color:var(--text)}
+.member{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:var(--r)}
+.av{width:40px;height:40px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-weight:700;color:var(--muted);flex:none}
+.member .mm{flex:1;min-width:0}
+.member .mm b{display:block;font-weight:600}
+.member .mm span{font-size:12px;color:var(--dim)}
+.switch{width:48px;height:28px;border-radius:999px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--text);transition:transform .15s}
+.switch.on{background:var(--lime)}
+.switch.on::after{transform:translateX(20px);background:var(--lime-ink)}
+.sl-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:var(--r)}
+.sl-n{font-family:var(--f-mono);color:var(--dim);width:22px;text-align:center;font-weight:700}
+.big-cta{min-height:56px;font-size:15px;border-radius:18px}
+
+/* Modo palco */
+.performing .nav{display:none}
+.stagebar{display:flex;align-items:center;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--line);padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.stagebar .nx{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:10px;text-align:right;min-height:56px;border-radius:16px;background:var(--surface-2);padding:0 14px}
+.stagebar .nx b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stagebar .nx span{display:block;font-size:11px;color:var(--dim)}
+.stagebar .pv{width:56px;height:56px;border-radius:16px;background:var(--surface-2);display:grid;place-items:center;flex:none}
+.stagebar .pv:disabled,.stagebar .nx:disabled{opacity:.35}
+
+.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translateX(-50%) translateY(-20px);opacity:0;z-index:60;background:var(--text);color:var(--bg);font-weight:600;font-size:13px;padding:12px 16px;border-radius:14px;max-width:calc(100% - 32px);transition:all .2s;pointer-events:none;display:flex;gap:8px;align-items:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app" id="app">
+  <nav class="nav" id="nav" aria-label="Navegação principal"></nav>
+  <main class="view" id="view"></main>
+</div>
+<div id="modal"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------- Ícones (traço arredondado) ---------- */
+const P = {
+  lib:'<rect x="3" y="3" width="18" height="18" rx="5"/><path d="M10 16.5V8l6-1.5v8"/><circle cx="8.5" cy="16.5" r="1.5"/><circle cx="14.5" cy="15" r="1.5"/>',
+  band:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c.6-3.4 3-5.5 6-5.5s5.4 2.1 6 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.8c1.7.7 2.8 2.5 3 5.2"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>', next:'<path d="M9 5l7 7-7 7"/>',
+  minus:'<path d="M5 12h14"/>',
+  pen:'<path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3"/>',
+  hl:'<path d="M15 4l5 5-9 9H6v-5z"/><path d="M4 21h8"/>',
+  eraser:'<path d="M8 20h12"/><path d="M4.6 14.6 13.8 5.4a2 2 0 0 1 2.8 0l2.4 2.4a2 2 0 0 1 0 2.8L10 19.6H8.4z"/><path d="M9 10l5 5"/>',
+  hand:'<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.5V6a1.5 1.5 0 0 1 3 0v5"/><path d="M17 9.5a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7h-1.5a6 6 0 0 1-4.6-2.2L4 15.5a1.6 1.6 0 0 1 2.4-2L8 15"/>',
+  undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  redo:'<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
+  play:'<path d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.7l-10-6.5A1 1 0 0 0 8 5.5z"/>',
+  pause:'<path d="M8 5v14M16 5v14"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  link:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
+  paste:'<rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4V3h6v1M9 11h6M9 15h4"/>',
+  newdoc:'<path d="M14 3H8a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/>',
+  folder:'<path d="M3 8a3 3 0 0 1 3-3h3.5l2 2.5H18a3 3 0 0 1 3 3V16a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  text:'<path d="M5 7V5h14v2M12 5v14M9 19h6"/>',
+  down:'<path d="M12 4v11"/><path d="m7.5 11 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/>',
+  copy:'<rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  cifra:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h3M14 8h2M8 12h8M8 16h6"/>',
+  tab:'<path d="M4 6h16M4 10h16M4 14h16M4 18h16"/><path d="M9 4v16" opacity=".5"/>',
+  staff:'<path d="M3 6h18M3 10h18M3 14h18M3 18h18"/><circle cx="14" cy="16" r="2.2"/><path d="M16.2 16V5"/>',
+  blank:'<rect x="5" y="3" width="14" height="18" rx="3"/>',
+  mix:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h3M14 8h2"/><path d="M8 13h8M8 16h8" opacity=".6"/>',
+  edit:'<path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/>',
+  wifi:'<path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".8"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>',
+  logout:'<path d="M14 4h3a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/>',
+  globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/>',
+  device:'<rect x="6" y="3" width="12" height="18" rx="3"/><path d="M11 18h2"/>',
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  sliders:'<path d="M4 7h9M18 7h2M4 17h2M11 17h9"/><circle cx="15.5" cy="7" r="2.5"/><circle cx="8.5" cy="17" r="2.5"/>',
+  mine:'<path d="M14 3H8a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h3"/><path d="M14 3v5h5v2"/><path d="M14 21l.6-2.6 4.7-4.7a1.4 1.4 0 0 1 2 2l-4.7 4.7z"/>',
+  chev:'<path d="m6 9 6 6 6-6"/>',
+  up:'<path d="m6 15 6-6 6 6"/>',
+  note:'<ellipse cx="9" cy="17" rx="3.5" ry="2.6" transform="rotate(-20 9 17)"/><path d="M12.2 16V4c1.5 2.5 5 3 5 6.5"/>',
+  sort:'<path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M14 6h7M14 11h5M14 16h3"/>'
+};
+const ic = (n, c='') => `<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+/* ---------- Música: acordes e transposição ---------- */
+const SH = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FL = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const IDX = {C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11,Cb:11,'E#':5,Fb:4,'B#':0};
+const FLAT_KEYS = new Set(['F','Bb','Eb','Ab','Db','Dm','Gm','Cm','Fm','Bbm','Ebm']);
+const CHORD_RE = /^([A-G][#b]?)((?:maj|min|dim|aug|sus|add|m|M|°|º|\+|\d|\(|\)|#|b|-|\/(?=\d))*)(?:\/([A-G][#b]?))?$/;
+const NEUTRAL_RE = /^(\|+|\(?\d+x\)?|x\d+|%|-+|\.+)$/i;
+/* Texto copiado de sites vem com caracteres invisíveis (o Cifra Club põe U+200B antes das linhas), espaços
+   especiais e tabulação. Sem limpar, os acordes não são reconhecidos: ficam sem cor e não mudam de tom. */
+const ZW_RE = /[​-‍⁠﻿]/g;
+const cleanText = t => String(t ?? '').replace(/\r\n?/g, '\n').replace(ZW_RE, '').replace(/[  -   　]/g, ' ')
+  .replace(/\t/g, '    ').replace(/♯/g, '#').replace(/♭/g, 'b');
+const parenSplit = t => t.match(/^(\(*)(.*?)(\)*)$/);
+/* Acorde "solto": começa com a nota (A–G) e o resto é escrita de acorde, mesmo fora do padrão ("C9(11)", "Bb7M+5",
+   "A/C#m"). O resto não pode ter palavra minúscula (fora m, maj, min, dim, aug, sus, add e o b de bemol),
+   senão "Deus" ou "Agora" virariam acorde. */
+const LOOSE_RE = /^([A-G][#b]?)([^\s\/]*)(?:\/([A-G][#b]?)(\S*))?$/;
+const looseChord = t => { const m = t.match(LOOSE_RE); if(!m) return false;
+  const rest = (m[2] + (m[4] || '')).replace(/maj|min|dim|aug|sus|add|m/g, '');
+  return !/[a-ac-zà-ú]/.test(rest) && t.length <= 14; };
+const chordCore = t => CHORD_RE.test(t) || looseChord(t);
+/* Acorde puro ("G", "F#m7(11)") ou entre parênteses de repetição ("(G", "D)") */
+const isChord = t => chordCore(t) || (() => { const p = parenSplit(t); return !!(p[1] || p[3]) && chordCore(p[2]); })();
+function isChordLine(line){
+  // anotações entre parênteses, como "(passagem)" ou "(final da música)", não impedem a linha de ser de acordes
+  const toks = line.replace(/\((?=[^)]*[a-zà-ú]{4})[^)]*\)/g, ' ').trim().split(/\s+/).filter(Boolean);
+  if(!toks.length) return false;
+  let n = 0;
+  for(const t of toks){ if(isChord(t)) n++; else if(!NEUTRAL_RE.test(t) && !/^[()]+$/.test(t)) return false; }
+  return n > 0;
+}
+const isTabLine = l => /^\s*[A-Ga-g][#b]?\|/.test(l);
+/* Sustenido ou bemol: automático pelo tom, ou fixo pela preferência do Perfil */
+const accPref = () => { try { return DB.prefs.acc || 'auto'; } catch(e){ return 'auto'; } };
+function keyName(base, st){
+  const m = base.match(/^([A-G][#b]?)(m?)/); if(!m) return base;
+  const i = (IDX[m[1]] + st + 1200) % 12, minor = m[2], p = accPref();
+  if(p === 'flat') return FL[i]+minor; if(p === 'sharp') return SH[i]+minor;
+  return FLAT_KEYS.has(FL[i]+minor) ? FL[i]+minor : SH[i]+minor;
+}
+const useFlats = key => { const p = accPref(); return p === 'flat' ? true : p === 'sharp' ? false : FLAT_KEYS.has(key); };
+const tNote = (n, st, fl) => (fl?FL:SH)[(IDX[n] + st + 1200) % 12];
+function tChord(tok, st, fl){
+  const m = tok.match(CHORD_RE);
+  if(!m){
+    const p = parenSplit(tok); if((p[1] || p[3]) && chordCore(p[2])) return p[1] + tChord(p[2], st, fl) + p[3];
+    if(looseChord(tok)){ if(!st && accPref()==='auto') return tok; // fora do padrão: troca a nota e o baixo, mantém o resto
+      const l = tok.match(LOOSE_RE); return tNote(l[1],st,fl) + l[2] + (l[3] ? '/' + tNote(l[3],st,fl) + (l[4]||'') : ''); }
+    return tok;
+  }
+  if(!st && accPref()==='auto') return tok;
+  return tNote(m[1],st,fl) + m[2] + (m[3] ? '/' + tNote(m[3],st,fl) : '');
+}
+function tLine(line, st, fl){
+  if(!st && accPref()==='auto') return line;
+  let out = '';
+  line.replace(/\S+/g, (tok, idx) => {
+    const nt = isChord(tok) ? tChord(tok, st, fl) : tok;
+    const pos = Math.max(idx, out.length ? out.length + 1 : 0);
+    out = out.padEnd(pos, ' ') + nt; return tok;
+  });
+  return out;
+}
+const chordB = t => isChord(t) ? `<b class="c" data-act="chordinfo" data-v="${esc(parenSplit(t)[2])}">${esc(t)}</b>` : `<span class="n">${esc(t)}</span>`;
+const chordSpans = l => l.replace(/\S+|\s+/g, t => /\S/.test(t) ? chordB(t) : t);
+const isSecLine = l => /^\s*\[[^\]]+\]/.test(l);
+const isLyric = l => l != null && !!l.trim() && !isChordLine(l) && !isTabLine(l) && !isSecLine(l);
+/* Regra da posição (ideia do Rafa): a linha logo acima da letra é de acordes quando tem cara de linha de acordes,
+   isto é, poucos itens com espaços largos entre eles e pelo menos metade começando com uma nota (A–G).
+   Assim "2x", "Riff", "N.C." ou um formato raro não derrubam a linha; e dois versos seguidos não viram acorde. */
+function chordRowByPosition(line, next){
+  if(!isLyric(next) || isTabLine(line) || isSecLine(line)) return false;
+  const s = line.replace(/\((?=[^)]*[a-zà-ú]{4})[^)]*\)/g, ' '), toks = s.trim().split(/\s+/).filter(Boolean);
+  if(!toks.length || toks.some(t => /[a-zà-ú]{4,}/.test(t.replace(/maj|min|dim|aug|sus|add/g, '')))) return false;
+  const spaced = toks.length === 1 || / {2,}\S/.test(s.trim()) || /^ {2,}/.test(s);
+  const chords = toks.filter(isChord).length; // "Amém" ou "Bem" começam com nota, mas não têm escrita de acorde
+  return spaced && chords >= Math.ceil(toks.length / 2);
+}
+const chordRowAt = (L, i) => isChordLine(L[i]) || chordRowByPosition(L[i], L[i+1]);
+/* Acorde + letra em "células" que quebram linha sem perder o alinhamento: cada acorde fica preso ao trecho
+   da letra embaixo dele. Só quebra entre palavras (trechos de uma mesma palavra ficam juntos). */
+function pairHTML(chLine, lyric, st, fl){
+  const toks = []; chLine.replace(/\S+/g, (t, i) => { toks.push([i, t]); return t; });
+  /* free = o acorde pode passar por cima da letra seguinte sem empurrá-la (há espaço até o próximo acorde),
+     como na cifra impressa; só reserva largura quando o próximo acorde está colado */
+  const cells = [], add = (c, text, free) => (text.match(/\S+\s*|\s+/g) || ['']).forEach((p, k) => cells.push({c: k ? '' : c, t: p, free}));
+  const first = toks.length ? toks[0][0] : lyric.length;
+  if(first > 0 && lyric.slice(0, first)) add('', lyric.slice(0, first));
+  toks.forEach(([col, tok], k) => { const c = isChord(tok) ? tChord(tok, st, fl) : tok, next = k+1 < toks.length ? toks[k+1][0] : Infinity;
+    add(c, lyric.slice(col, next === Infinity ? undefined : next), next - col > c.length); });
+  let out = '', open = false;
+  cells.forEach((x, i) => {
+    const prev = cells[i-1], brk = !prev || !prev.t.trim() || /\s$/.test(prev.t) || /^\s/.test(x.t);
+    if(brk){ if(open) out += '</span>'; out += '<span class="grp">'; open = true; }
+    out += `<span class="cell ${x.c && x.free ? 'free' : ''}">${x.c ? chordB(x.c) : '<span class="c0">&nbsp;</span>'}<span class="ly">${x.t ? esc(x.t) : '&nbsp;'}</span></span>`;
+  });
+  return `<div class="ln pair">${out}${open ? '</span>' : ''}</div>`;
+}
+function renderSheet(text, st, fl){
+  const L = cleanText(text).split('\n').map(l => l.replace(/\s+$/, ''));
+  let h = '', part = false, tab = false;
+  const closeTab = () => { if(tab){ h += '</div>'; tab = false; } };
+  for(let i = 0; i < L.length; i++){
+    const line = L[i], sec = line.match(/^\s*\[([^\]]+)\]\s*(.*)$/);
+    if(!isTabLine(line)) closeTab();
+    if(sec){
+      if(part) h += '</div>'; h += '<div class="part">'; part = true;
+      const rest = sec[2] && isChordLine(sec[2]) ? chordSpans(tLine(sec[2], st, fl)) : esc(sec[2] || '');
+      h += `<div class="ln sec-row"><span class="sec">${esc(sec[1])}</span>${rest}</div>`; continue;
+    }
+    if(!part){ h += '<div class="part">'; part = true; }
+    if(!line.trim()){ h += '<div class="ln"></div>'; continue; }
+    if(isTabLine(line)){ if(!tab){ h += '<div class="tabblk">'; tab = true; } h += `<div class="ln tab">${esc(line)}</div>`; continue; }
+    if(chordRowAt(L, i)){
+      if(isLyric(L[i+1])){ h += pairHTML(line, L[i+1], st, fl); i++; continue; }
+      h += `<div class="ln ch">${chordSpans(tLine(line, st, fl))}</div>`; continue;
+    }
+    h += `<div class="ln">${esc(line)}</div>`;
+  }
+  closeTab(); if(part) h += '</div>';
+  return h;
+}
+/* ---------- Diagramas de acordes (violão, afinação padrão) ----------
+   Formas abertas mais usadas + formas com pestana (raiz na 6ª ou na 5ª corda) para o resto.
+   Cordas: E A D G B e. null = não tocar (x), 0 = solta. */
+const OPEN = {
+  'C':[null,3,2,0,1,0],'D':[null,null,0,2,3,2],'E':[0,2,2,1,0,0],'G':[3,2,0,0,0,3],'A':[null,0,2,2,2,0],
+  'Am':[null,0,2,2,1,0],'Em':[0,2,2,0,0,0],'Dm':[null,null,0,2,3,1],
+  'A7':[null,0,2,0,2,0],'D7':[null,null,0,2,1,2],'E7':[0,2,0,1,0,0],'G7':[3,2,0,0,0,1],'C7':[null,3,2,3,1,0],'B7':[null,2,1,2,0,2],
+  'Am7':[null,0,2,0,1,0],'Em7':[0,2,0,0,0,0],'Dm7':[null,null,0,2,1,1],
+  'A7M':[null,0,2,1,2,0],'C7M':[null,3,2,0,0,0],'D7M':[null,null,0,2,2,2],'E7M':[0,2,1,1,0,0],'G7M':[3,2,0,0,0,2],'F7M':[null,null,3,2,1,0],
+  'Asus4':[null,0,2,2,3,0],'Dsus4':[null,null,0,2,3,3],'Esus4':[0,2,2,2,0,0]
+};
+const MOV = {
+  E:{'':[0,2,2,1,0,0], m:[0,2,2,0,0,0], '7':[0,2,0,1,0,0], m7:[0,2,0,0,0,0], '7M':[0,null,1,1,0,null], sus4:[0,2,2,2,0,0]},
+  A:{'':[null,0,2,2,2,0], m:[null,0,2,2,1,0], '7':[null,0,2,0,2,0], m7:[null,0,2,0,1,0], '7M':[null,0,2,1,2,0], sus4:[null,0,2,2,3,0], dim:[null,0,1,2,1,null], m7b5:[null,0,1,0,1,null]}
+};
+function chordShape(name){
+  const m = name.match(/^([A-G][#b]?)(.*?)(?:\/([A-G][#b]?))?$/); if(!m) return null;
+  const root = m[1], suf = m[2], bass = m[3];
+  let q = '';
+  if(/^(m7?\(?b5\)?|ø)/.test(suf)) q = 'm7b5';
+  else if(/^(°|º|dim)/.test(suf)) q = 'dim';
+  else if(/^m(?!aj)/.test(suf)) q = /7/.test(suf) ? 'm7' : 'm';
+  else if(/7M|maj7|M7/.test(suf)) q = '7M';
+  else if(/sus/.test(suf)) q = 'sus4';
+  else if(/7/.test(suf)) q = '7';
+  const plain = root + ({'':'',m:'m','7':'7',m7:'m7','7M':'7M',sus4:'sus4',dim:'°',m7b5:'m7(b5)'}[q]);
+  const simplified = !!bass || !/^(|m|7|m7|7M|maj7|M7|sus4?|°|º|dim|m7\(b5\)|m7b5)$/.test(suf);
+  if(OPEN[root + q]) return {fr:OPEN[root + q], simplified, base:plain, bass};
+  const cands = [];
+  [['E',4],['A',9]].forEach(([str, open]) => { const sh = MOV[str][q]; if(!sh) return;
+    const r = ((IDX[root] - open) % 12 + 12) % 12; cands.push({r, fr: sh.map(f => f===null ? null : f + r)}); });
+  if(!cands.length) return null;
+  cands.sort((a,b) => (a.r||12) - (b.r||12));
+  return {fr:cands[0].fr, simplified, base:plain, bass};
+}
+function diagramSVG(fr, size=1){
+  const pos = fr.filter(f => f > 0), max = pos.length ? Math.max(...pos) : 0, min = pos.length ? Math.min(...pos) : 1;
+  const base = max <= 4 ? 1 : min, x0 = 14, y0 = 18, dx = 11, dy = 13, W = x0 + 5*dx + 10, H = y0 + 5*dy + 6;
+  let g = '';
+  for(let i=0;i<6;i++) g += `<line x1="${x0+i*dx}" y1="${y0}" x2="${x0+i*dx}" y2="${y0+5*dy}" class="dl"/>`;
+  for(let j=0;j<=5;j++) g += `<line x1="${x0}" y1="${y0+j*dy}" x2="${x0+5*dx}" y2="${y0+j*dy}" class="dl" ${j===0 && base===1 ? 'stroke-width="3"' : ''}/>`;
+  fr.forEach((f, i) => { const x = x0 + i*dx;
+    if(f === null) g += `<text x="${x}" y="${y0-5}" class="dm">×</text>`;
+    else if(f === 0) g += `<circle cx="${x}" cy="${y0-8}" r="3" class="do"/>`;
+    else g += `<circle cx="${x}" cy="${y0 + (f-base+.5)*dy}" r="4.3" class="dd"/>`; });
+  if(base > 1) g += `<text x="${x0-5}" y="${y0+dy*.75}" class="dn" text-anchor="end">${base}ª</text>`;
+  return `<svg class="diag" viewBox="0 0 ${W} ${H}" width="${W*size}" height="${H*size}" aria-hidden="true">${g}</svg>`;
+}
+function chordsIn(text, st, fl){
+  const out = [];
+  cleanText(text).split('\n').forEach(l => { const s = l.replace(/^\s*\[[^\]]*\]/, ''); if(isChordLine(s)) s.trim().split(/\s+/).filter(isChord).forEach(t => { const c = tChord(parenSplit(t)[2], st, fl); if(!out.includes(c)) out.push(c); }); });
+  return out;
+}
+function diagGrid(text, st, fl){
+  const list = chordsIn(text, st, fl);
+  if(!list.length) return '';
+  return `<div class="dgrid">${list.map(c => { const sh = chordShape(c);
+    return `<button class="dcard" data-act="chordinfo" data-v="${esc(c)}"><b>${esc(c)}</b>${sh ? diagramSVG(sh.fr) : '<span class="sub">sem forma</span>'}</button>`; }).join('')}</div>`;
+}
+function detectKey(text){
+  for(const l of cleanText(text).split('\n')){
+    const s = l.replace(/^\s*\[[^\]]*\]/, '');
+    if(isChordLine(s)){ const t = parenSplit(s.trim().split(/\s+/).find(isChord))[2]; const m = t.match(/^([A-G][#b]?)(m(?!aj))?/); return m[1] + (m[2]||''); }
+  }
+  return 'C';
+}
+const KEYS = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B','Cm','C#m','Dm','Ebm','Em','Fm','F#m','Gm','G#m','Am','Bbm','Bm'];
+
+/* ---------- Dados de exemplo (letras criadas para o protótipo) ---------- */
+const SEED_SONGS = [
+ {id:'luz', title:'Luz da Manhã', artist:'Artista Exemplo', genre:'Worship', key:'G', bpm:72, fmt:'Cifra + tab', text:
+`[Intro] G  D/F#  Em  C
+
+[Primeira Parte]
+G              D/F#
+Abro a janela e o dia vem
+Em                C
+traz uma calma que eu não sei
+G              D/F#
+Tudo que pesa fica pra trás
+Em          C       D
+cabe no peito um pouco de paz
+
+[Refrão]
+C          G
+Luz da manhã
+D           Em
+fica comigo um pouco mais
+C          G
+Luz da manhã
+D               G
+ensina o caminho de voltar
+
+[Solo]
+e|-----------------------------|
+B|---3---3-3---1---0-----------|
+G|-0---0-----0---2---0---------|
+D|-----------------------------|
+A|-----------------------------|
+E|-----------------------------|
+
+[Final] C  D  G`},
+ {id:'estrada', title:'Estrada de Terra', artist:'Artista Exemplo', genre:'Sertanejo', key:'D', bpm:90, fmt:'Cifra', text:
+`[Intro] D  A  Bm  G  (2x)
+
+[Primeira Parte]
+D                 A
+Poeira subindo no fim da tarde
+Bm               G
+rádio ligado, janela aberta
+D                 A
+a cidade pequena ficou pra trás
+Bm          G          A
+e o coração já sabe a volta
+
+[Refrão]
+G         D
+Estrada de terra
+A               Bm
+leva a saudade pra passear
+G         D
+Estrada de terra
+A                 D
+um dia eu volto pra te contar`},
+ {id:'cimento', title:'Céu de Cimento', artist:'Artista Exemplo', genre:'Rock', key:'Em', bpm:128, fmt:'Cifra + tab', text:
+`[Riff]
+e|-------------------------|
+B|-------------------------|
+G|-------------------------|
+D|-----2--2-----5--4--2----|
+A|--2--------2-------------|
+E|-0-----------------------|
+
+[Primeira Parte]
+Em              C
+Prédio em cima de prédio
+G                D
+ninguém olha mais pra cima
+Em              C
+o céu virou um detalhe
+G             D
+entre um sinal e outro
+
+[Refrão]
+C       G        D        Em
+Grita, cidade, me deixa ouvir
+C       G         D
+um pedaço de azul aqui`},
+ {id:'varanda', title:'Varanda', artist:'Artista Exemplo', genre:'MPB', key:'A', bpm:84, fmt:'Cifra', text:
+`[Intro] A7M  D7M  C#m7  F#m7
+
+[Primeira Parte]
+A7M              D7M
+Café passado na varanda
+C#m7          F#m7
+o vento mexe a rede devagar
+Bm7            E7(9)
+e a tarde inteira cabe aqui
+A7M     D7M
+sem pressa de acabar`},
+ {id:'casa', title:'Casa Cheia', artist:'Autoral', genre:'Worship', key:'C', bpm:76, fmt:'Cifra', origin:'autoral', text:
+`[Primeira Parte]
+C           G
+Quando a casa enche de voz
+Am           F
+cada canto vira canção
+
+[Refrão]
+F       C        G       Am
+Canta, canta, casa cheia
+F         C          G
+ninguém fica de fora`}
+];
+const LINK_SAMPLE = {title:'Maré Mansa', artist:'Artista Exemplo', genre:'Pop', text:
+`[Intro] F  C  Dm  Bb
+
+[Primeira Parte]
+F                C
+O barco encosta sem fazer barulho
+Dm               Bb
+a areia guarda o que a gente diz
+F                C
+e o tempo passa devagar aqui
+Dm        Bb        C
+maré mansa, me deixa ficar`};
+const PASTE_SAMPLE =
+`[Intro] A  E  F#m  D
+
+[Primeira Parte]
+A                  E
+Noite de junho, fogueira acesa
+F#m              D
+o céu inteiro de bandeirinha
+A                  E
+a sanfona puxa a conversa
+F#m        D         E
+e ninguém dorme sozinha`;
+
+const seedRecent = () => { const n = Date.now(), h = 3600e3; return [{id:'luz', t:n-.7*h}, {id:'estrada', t:n-26*h}, {id:'varanda', t:n-75*h}]; };
+const SEED = () => ({
+  mode: null,
+  recent: seedRecent(),
+  songs: SEED_SONGS.map(s => ({origin:'exemplo', ...s, example:true})),
+  folders: ['Ensaios'],
+  folderOf: {},
+  bands: [{id:'b1', name:'Banda Exemplo', code:'BX4-27Q', role:'lider',
+    members:[{n:'Você',r:'lider',i:'Guitarra'},{n:'Bruno',r:'editor',i:'Teclado'},{n:'Carla',r:'membro',i:'Voz'},{n:'Diego',r:'membro',i:'Bateria'}],
+    pending:[{n:'Marina',i:'Violão'}], songs:['luz','casa','estrada','cimento','varanda']}],
+  setlists: [
+    {id:'s1', band:'b1', name:'Culto de domingo', date:'16 nov', items:[{song:'luz',st:2},{song:'casa',st:0},{song:'estrada',st:0,lockedBy:'Bruno'},{song:'varanda',st:-2}]},
+    {id:'s2', band:'b1', name:'Ensaio de quinta', date:'13 nov', items:[{song:'cimento',st:0},{song:'estrada',st:2},{song:'luz',st:0}]}
+  ],
+  ann: {}
+});
+const STORE = 'app-cifras-prototipo-v1';
+let DB;
+/* Completa dados de versões antigas sem perder o que já existe (vale para o aparelho e para o que vem da nuvem) */
+function normalizeDB(d){
+  if(!d.recent) d.recent = seedRecent().filter(r => d.songs.some(s => s.id === r.id));
+  if(d.mode === undefined) d.mode = null;
+  d.prefs = {acc:'auto', cols:1, diag:false, penOnly:false, ...(d.prefs || {})};
+  // cifras coladas antes da limpeza: tira os caracteres invisíveis e, se o tom ficou no padrão "C", descobre de novo
+  d.songs.forEach(s => { if(s.text && cleanText(s.text) !== s.text){ s.text = cleanText(s.text); if(s.key === 'C') s.key = detectKey(s.text); } });
+  if(d.user && !d.user.insts) d.user.insts = d.user.inst ? [d.user.inst] : []; // antes era um instrumento só
+  d.songs.forEach(s => { if(!s.origin) s.origin = s.example ? (s.id==='casa' ? 'autoral' : 'exemplo') : (s.artist==='Autoral' ? 'autoral' : 'colada'); });
+  return d;
+}
+try { DB = JSON.parse(localStorage.getItem(STORE)) || SEED(); } catch(e){ DB = SEED(); }
+DB = normalizeDB(DB);
+
+/* ---------- Nuvem (Supabase) ----------
+   Só liga na versão publicada na Vercel, que injeta window.APP_CONFIG e o cliente da Supabase.
+   No link do claude.ai tudo continua simulado e salvo só no aparelho.
+   Tabela user_data: uma linha por conta, com todos os dados do app (cifras, setlists, anotações, preferências).
+   O aparelho guarda uma cópia (funciona sem internet) e envia para a nuvem logo depois de cada mudança. */
+const CFG = window.APP_CONFIG || null;
+const sb = CFG && window.supabase ? window.supabase.createClient(CFG.url, CFG.anon) : null;
+let cloudUser = null, pushT = null, sync = {state: sb ? 'idle' : 'local', at: 0};
+function cloudPush(){
+  if(!sb || !cloudUser || !DB.user || DB.user.guest) return;
+  clearTimeout(pushT); sync = {...sync, state:'pending'};
+  pushT = setTimeout(async () => {
+    try {
+      const {error} = await sb.from('user_data').upsert({user_id: cloudUser.id, data: DB, updated_at: new Date().toISOString()});
+      sync = error ? {state:'error', at:Date.now(), msg:error.message} : {state:'ok', at:Date.now()};
+    } catch(e){ sync = {state:'error', at:Date.now(), msg:'sem internet'}; }
+    document.querySelectorAll('[data-sync]').forEach(el => { el.outerHTML = syncHTML(); });
+  }, 700);
+}
+async function cloudLoad(user){
+  cloudUser = user;
+  const {data, error} = await sb.from('user_data').select('data').eq('user_id', user.id).maybeSingle();
+  if(error) throw error;
+  if(data?.data){ DB = normalizeDB(data.data); try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch(e){} sync = {state:'ok', at:Date.now()}; }
+  else { DB.user = {method:'email', email:user.email, name:'', insts:[]}; save(); } // conta nova: leva o que já está no aparelho
+}
+function syncHTML(){
+  if(!sb) return '';
+  const t = sync.at ? ago(sync.at) : '';
+  const txt = {ok:`Salvo na sua conta · ${t}`, pending:'Salvando…', error:'Sem internet: salvo neste aparelho, envia quando a conexão voltar', idle:'Conectado à sua conta', local:''}[sync.state];
+  return `<p class="sub" data-sync style="margin:0;color:${sync.state==='error' ? 'var(--danger)' : 'var(--muted)'}">${ic(sync.state==='error' ? 'wifi' : 'check','sm')} ${esc(txt)}</p>`;
+}
+addEventListener('online', () => { if(sync.state === 'error' || sync.state === 'pending') cloudPush(); });
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch(e){} cloudPush(); };
+const song = id => DB.songs.find(s => s.id === id);
+const band = id => DB.bands.find(b => b.id === id);
+
+/* ---------- Estado e navegação ---------- */
+// A escolha estudo/palco aparece toda vez que o app abre (decisão do Rafa); o último modo fica destacado.
+const S = { auth:{step:'login'}, choosing:true, tab:'lib', stack:[{name:'lib'}], f:{folder:null, genre:null, key:null, sort:'new'}, q:'', bandTab:'rep', modal:null, pending:null };
+let V = null; // estado do visualizador
+const cur = () => S.stack[S.stack.length - 1];
+function go(name, p={}){ stopScroll(); S.stack.push({name, ...p}); render(); }
+function back(){ stopScroll(); if(S.stack.length > 1) S.stack.pop(); render(); }
+function tab(t){ stopScroll(); S.tab = t; S.stack = [{name:t}]; render(); }
+
+const view = document.getElementById('view'), nav = document.getElementById('nav');
+/* O ＋ fica sempre na 3ª posição, nos dois modos, para não mudar de lugar ao trocar de modo */
+const NAVS = {
+  estudo: [['lib','lib','Biblioteca'],['recent','clock','Recentes'],'+',['mine','mine','Minhas'],['profile','user','Perfil']],
+  palco:  [['lib','lib','Biblioteca'],['bands','band','Bandas'],'+',['stage','mic','Palco'],['profile','user','Perfil']]
+};
+function renderNav(){
+  const b = ([t, icon, label]) => `<button class="nav-b ${S.tab===t?'on':''}" data-act="tab" data-v="${t}" aria-label="${label}">${ic(icon)}<span>${label}</span></button>`;
+  nav.innerHTML = `<div class="nav-brand">CIFRAS</div>` + (NAVS[DB.mode] || NAVS.estudo).map(it => it==='+' ? `<button class="nav-plus" data-act="create" aria-label="Adicionar música">${ic('plus')}</button>` : b(it)).join('');
+}
+function render(){
+  // Ordem de entrada: conta (entrar → código → primeiro acesso) → escolha do modo → app
+  const needAuth = !DB.user || !DB.user.name;
+  const c = S.booting ? {name:'boot'} : needAuth ? {name:'auth'} : S.choosing ? {name:'mode'} : cur();
+  const stageSong = !!(c.name === 'song' && V?.ctx?.stage); // música aberta pela biblioteca no modo palco
+  document.body.classList.toggle('performing', c.name === 'perform' || stageSong);
+  document.body.classList.toggle('nobar', !!stageSong);
+  document.body.classList.toggle('choosing', c.name === 'mode' || c.name === 'auth' || c.name === 'boot');
+  renderNav();
+  view.innerHTML = SCREENS[c.name](c);
+  view.scrollTop = 0;
+  if(c.name === 'song' || c.name === 'perform') mountInk();
+  wake(c.name === 'perform' || !!stageSong);
+}
+
+/* ---------- Telas ---------- */
+const SCREENS = {};
+const MODE_NAME = {estudo:'Modo estudo', palco:'Modo palco'};
+
+/* ---------- Conta: entrar sem senha ----------
+   Google, Apple ou código de 6 dígitos por e-mail (código e não link: o link abriria o navegador, fora do app
+   instalado). No protótipo tudo é simulado: nenhum e-mail é enviado e qualquer código de 6 dígitos entra. */
+const INSTR = ['Violão','Guitarra','Baixo','Teclado','Bateria','Voz','Ukulele','Outro'];
+const METHOD_NAME = {google:'Conta Google', apple:'Conta Apple', email:'E-mail'};
+const OTP_LEN = CFG?.otpLen || 6; // tamanho do código que a Supabase manda (configurável no painel)
+/* Mensagens da Supabase traduzidas para o músico */
+function authErr(e){
+  const m = (e?.message || '').toLowerCase();
+  if(e?.status === 429 || m.includes('rate') || m.includes('seconds')) return 'Muitas tentativas seguidas. Espere um minuto e peça o código de novo.';
+  if(m.includes('expired') || m.includes('invalid') || m.includes('token')) return 'Código errado ou vencido. Confira o último e-mail ou peça outro.';
+  if(m.includes('fetch') || m.includes('network')) return 'Sem internet. Confira a conexão e tente de novo.';
+  return 'Não deu certo agora: ' + (e?.message || 'erro desconhecido');
+}
+const toggleIn = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
+const instList = u => (u.insts || []).join(', ') || 'Músico';
+const AUTH_SAMPLE = `<div class="auth-art" aria-hidden="true"><span class="sec">Refrão</span>
+  <div class="ln pair"><span class="grp"><span class="cell"><b class="c">C</b><span class="ly">Luz </span></span><span class="cell"><span class="c0">&nbsp;</span><span class="ly">da </span></span><span class="cell free"><b class="c">G</b><span class="ly">manhã</span></span></span></div>
+  <div class="ln pair"><span class="grp"><span class="cell free"><b class="c">D</b><span class="ly">fica </span></span><span class="cell"><span class="c0">&nbsp;</span><span class="ly">comigo </span></span><span class="cell free"><b class="c">Em</b><span class="ly">mais</span></span></span></div></div>`;
+SCREENS.boot = () => `<div class="mode-wrap"><div style="text-align:center"><div class="spin"></div><p class="sub">Buscando suas cifras…</p></div></div>`;
+SCREENS.auth = () => {
+  const a = S.auth, u = DB.user;
+  let body = '';
+  if(u && !u.name){ // primeiro acesso
+    body = `<div class="label" style="color:var(--lime)">Primeiro acesso</div><h1>Como te chamam?</h1>
+      <p class="sub">Aparece para a sua banda e nas anotações que você compartilhar.</p>
+      <div class="stack" style="margin-top:20px">
+        <div class="field"><label for="a-name">Seu nome</label><input class="input" id="a-name" autocomplete="given-name" value="${esc(a.name||'')}" placeholder="Ex.: Rafa"></div>
+        <div class="field"><label>O que você toca?</label><div class="chipwrap">${INSTR.map(i => { const on = (a.insts||[]).includes(i);
+          return `<button class="fbtn ${on?'on':''}" data-act="pickinst" data-v="${i}" aria-pressed="${on}">${i}</button>`; }).join('')}</div></div>
+        ${a.err ? `<p class="aerr" role="alert">${a.err}</p>` : ''}
+        <button class="btn lime block big-cta" data-act="finishonboard">Começar</button></div>`;
+  } else if(a.step === 'code'){
+    body = `<button class="link-b" data-act="authstep" data-v="login" style="color:var(--muted);margin-left:-4px">${ic('back','sm')} Trocar e-mail</button>
+      <h1 style="margin-top:6px">Confira seu e-mail</h1>
+      <p class="sub">Mandamos um código de ${OTP_LEN} números para <b style="color:var(--text)">${esc(a.email)}</b>. Ele vale por 10 minutos.</p>
+      <div class="stack" style="margin-top:20px">
+        <div class="field"><label for="a-code">Código</label><input class="input code-in" id="a-code" inputmode="numeric" autocomplete="one-time-code" maxlength="${OTP_LEN}" pattern="[0-9]*" placeholder="${'•'.repeat(OTP_LEN)}"></div>
+        ${a.err ? `<p class="aerr" role="alert">${a.err}</p>` : ''}
+        <button class="btn lime block big-cta" data-act="verifycode" ${a.busy?'disabled':''}>${a.busy ? '<span class="spin sm"></span> Conferindo…' : 'Entrar'}</button>
+        <button class="btn ghost block" data-act="resend">Não chegou? Reenviar código</button>
+        ${sb ? '<p class="sub" style="text-align:center">Não achou? Olhe na caixa de spam ou de promoções.</p>' : '<div class="note">Protótipo: nenhum e-mail é enviado. Digite quaisquer 6 números.</div>'}</div>`;
+  } else {
+    body = `<div class="label" style="color:var(--lime)">${sb ? 'Cifras · versão de teste' : 'Cifras · protótipo'}</div>
+      <h1>Sua cifra, do estudo ao palco.</h1>
+      <p class="sub">Entre para guardar suas músicas, tocar com a banda e ter tudo em qualquer aparelho. Sem senha para lembrar.</p>
+      <div class="stack" style="margin-top:22px">
+        <button class="btn block auth-sso" data-act="sso" data-v="google">${ic('globe','sm')} Continuar com Google</button>
+        <button class="btn block auth-sso" data-act="sso" data-v="apple">${ic('device','sm')} Continuar com Apple</button>
+        <div class="or"><span>ou com e-mail</span></div>
+        <div class="field"><label for="a-email">Seu e-mail</label><input class="input" id="a-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" value="${esc(a.email||'')}" placeholder="voce@email.com"></div>
+        ${a.err ? `<p class="aerr" role="alert">${a.err}</p>` : ''}
+        <button class="btn lime block big-cta" data-act="sendcode" ${a.busy?'disabled':''}>${a.busy ? '<span class="spin sm"></span> Enviando…' : `${ic('mail','sm')} Enviar código`}</button>
+        <button class="link-b" data-act="guest" style="align-self:center;color:var(--muted)">Experimentar sem conta</button>
+        <p class="sub" style="text-align:center;font-size:11px">Ao entrar, você concorda com os Termos de uso e a Política de privacidade (a definir).</p></div>`;
+  }
+  return `<div class="auth-wrap"><div class="auth-side">${AUTH_SAMPLE}<p class="auth-tag">Troca de tom, caneta, setlist e banda no mesmo lugar.</p></div>
+    <div class="auth-main"><div class="auth-in">${body}</div></div></div>`;
+};
+SCREENS.mode = () => {
+  const m = (v, icon, t, d, tabs) => `<button class="mode-card" data-act="pickmode" data-v="${v}" ${DB.mode===v?'style="border-color:var(--lime)"':''}>
+    <span class="oi">${ic(icon)}</span><b>${t}</b><span>${d}</span>
+    <span class="mode-tabs">${DB.mode===v?'<span class="pill lime" style="margin-right:6px">Último usado</span>':''}${tabs}</span></button>`;
+  return `<div class="mode-wrap"><div class="mode-in">
+    <div class="label" style="color:var(--lime)">${DB.user?.guest ? 'Cifras · sem conta' : 'Oi, ' + esc(DB.user?.name || '')}</div>
+    <h1>Como você vai tocar hoje?</h1>
+    <p class="sub">Dá para trocar depois, no Perfil.</p>
+    <div class="mode-grid">
+      ${m('estudo','lib','Modo estudo','Consultar, treinar e anotar sozinho.','Biblioteca · Recentes · Minhas')}
+      ${m('palco','mic','Modo palco','Tocar com a banda: setlists, versão da banda e tela cheia.','Biblioteca · Bandas · Palco')}
+    </div></div></div>`;
+};
+
+/* Biblioteca: recentes + músicas salvas; filtros abrem popup */
+const SORTS = {new:'Mais novas', recent:'Abertas por último', az:'Título A–Z', artist:'Artista A–Z'};
+const genres = () => [...new Set(DB.songs.map(s => s.genre))].sort((a,b)=>a.localeCompare(b,'pt'));
+const keysInLib = () => [...new Set(DB.songs.map(s => s.key))].sort((a,b)=>KEYS.indexOf(a)-KEYS.indexOf(b));
+const recentSongs = () => DB.recent.map(r => ({s:song(r.id), t:r.t})).filter(x => x.s);
+const MON = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function ago(t){
+  const min = (Date.now()-t)/60000, d = new Date(t), now = new Date(), hm = d.toTimeString().slice(0,5);
+  if(min < 1) return 'agora';
+  if(min < 60) return `há ${Math.floor(min)} min`;
+  if(d.toDateString() === now.toDateString()) return 'hoje, ' + hm;
+  if(d.toDateString() === new Date(now - 864e5).toDateString()) return 'ontem, ' + hm;
+  return `${d.getDate()} ${MON[d.getMonth()]}`;
+}
+function songCard(s, right, sub){
+  return `<button class="song" data-act="open" data-id="${s.id}">
+    <span class="keytile">${esc(s.key)}</span>
+    <span class="song-meta"><span class="song-t">${esc(s.title)}</span><span class="song-s">${sub ? sub : esc(s.artist) + ' · ' + esc(s.genre)}</span></span>
+    ${right ?? `<span class="pill">${esc(s.fmt||'Cifra')}</span>`}</button>`;
+}
+const fActive = () => S.f.folder || S.f.genre || S.f.key;
+function fbtn(kind, label, val){
+  return `<button class="fbtn ${val?'on':''}" data-act="filter" data-v="${kind}" aria-haspopup="dialog">${label}${val?`: <b>${esc(val)}</b>`:''}${ic('chev','sm')}</button>`;
+}
+SCREENS.lib = () => `<div class="wrap">
+    <div class="head"><div><div class="label">${MODE_NAME[DB.mode]||''}</div><h1>Biblioteca</h1></div>
+      <span class="pill">${DB.songs.length} músicas</span></div>
+    <div class="stack">
+      <div class="search">${ic('search','sm')}<input class="input" id="q" placeholder="Buscar música, artista, tom ou trecho da letra" value="${esc(S.q)}" autocomplete="off"></div>
+      <div class="filters">${fbtn('folder','Pasta',S.f.folder)}${fbtn('genre','Gênero',S.f.genre)}${fbtn('key','Tom',S.f.key)}
+        ${fActive()?`<button class="fbtn ghost" data-act="clearf">${ic('x','sm')}Limpar</button>`:''}</div>
+      <div id="libbody">${libBody()}</div>
+      <div class="note">Protótipo: músicas e letras criadas como exemplo. Suas anotações ficam salvas neste navegador.</div>
+    </div></div>`;
+function filtered(){
+  const q = S.q.trim().toLowerCase(), f = S.f;
+  let list = DB.songs.filter(s =>
+    (!f.folder || (DB.folderOf[s.id]||[]).includes(f.folder)) && (!f.genre || s.genre===f.genre) && (!f.key || s.key===f.key) &&
+    (!q || (s.title+' '+s.artist+' '+s.key+' '+s.text).toLowerCase().includes(q)));
+  const last = id => DB.recent.find(r => r.id===id)?.t || 0;
+  if(f.sort==='az') list = list.slice().sort((a,b)=>a.title.localeCompare(b.title,'pt'));
+  if(f.sort==='artist') list = list.slice().sort((a,b)=>a.artist.localeCompare(b.artist,'pt') || a.title.localeCompare(b.title,'pt'));
+  if(f.sort==='recent') list = list.slice().sort((a,b)=>last(b.id)-last(a.id));
+  return list;
+}
+function libBody(){
+  const searching = S.q.trim() || fActive(), rec = recentSongs().slice(0,4), list = filtered();
+  const recent = !searching && rec.length ? `
+    <div class="sh"><h2>Estudadas recentemente</h2><button class="link-b" data-act="tab" data-v="recent">Ver todas ${ic('next','sm')}</button></div>
+    <div class="rgrid" style="margin-top:10px">${rec.map(({s,t}) => `<button class="rcard" data-act="open" data-id="${s.id}">
+      <span class="keytile sm">${esc(s.key)}</span><span class="song-t">${esc(s.title)}</span><span class="song-s">${esc(ago(t))}</span></button>`).join('')}</div>` : '';
+  /* Achou pela letra? mostra o trecho em vez do artista */
+  const q = S.q.trim().toLowerCase();
+  const snip = s => { if(!q || (s.title+' '+s.artist+' '+s.key).toLowerCase().includes(q)) return '';
+    const l = s.text.split('\n').find(x => isLyric(x) && x.toLowerCase().includes(q)); return l ? '“' + esc(l.trim()) + '”' : ''; };
+  const items = list.length ? `<div class="list two">${list.map(s => songCard(s, undefined, snip(s))).join('')}</div>` :
+    `<div class="empty">${ic('folder')}<div><b>${searching?'Nada encontrado':'Nenhuma música salva ainda'}</b></div><div class="sub">${searching?'Tente outro termo ou limpe os filtros.':'Toque em ＋ para importar ou escrever a primeira.'}</div></div>`;
+  return `${recent}
+    <div class="sh" style="margin-top:${recent?'22px':'8px'}"><h2>${searching?'Resultado':'Músicas salvas'}<small>${list.length}</small></h2>
+      <button class="link-b" data-act="filter" data-v="sort" style="color:var(--muted)">${ic('sort','sm')}${SORTS[S.f.sort]}</button></div>
+    <div style="margin-top:10px">${items}</div>`;
+}
+
+SCREENS.recent = () => {
+  const r = recentSongs();
+  return `<div class="wrap">
+    <div class="head"><div><div class="label">Estudadas por último</div><h1>Recentes</h1></div>${r.length?'<button class="btn ghost" data-act="clearrecent">Limpar</button>':''}</div>
+    ${r.length ? `<div class="list two">${r.map(({s,t}) => songCard(s, `<span class="pill">${esc(ago(t))}</span>`)).join('')}</div>`
+      : `<div class="empty">${ic('clock')}<div><b>Nenhuma música aberta ainda</b></div><div class="sub">As músicas que você estudar aparecem aqui, da mais recente para a mais antiga.</div><button class="btn" style="margin-top:14px" data-act="tab" data-v="lib">Ir para a biblioteca</button></div>`}
+  </div>`;
+};
+const hasInk = id => Object.keys(DB.ann).some(k => k.startsWith(id+'|me|') && DB.ann[k].length);
+function mineReason(s){ return s.origin==='autoral' ? 'Criada por você' : s.edited ? 'Texto editado' : hasInk(s.id) ? 'Com anotações' : ''; }
+SCREENS.mine = () => {
+  const list = DB.songs.filter(mineReason);
+  return `<div class="wrap">
+    <div class="head"><div><div class="label">Criadas, editadas ou anotadas por você</div><h1>Minhas</h1></div><span class="pill">${list.length}</span></div>
+    <p class="sub" style="margin:-8px 0 16px">Cifras importadas entram aqui quando você edita o texto ou anota com a caneta. Todas continuam na Biblioteca.</p>
+    ${list.length ? `<div class="list two">${list.map(s => songCard(s, `<span class="pill lime">${mineReason(s)}</span>`)).join('')}</div>`
+      : `<div class="empty">${ic('mine')}<div><b>Nada seu ainda</b></div><div class="sub">O que você escrever do zero, editar ou anotar com a caneta aparece aqui.</div><button class="btn lime" style="margin-top:14px" data-act="create">${ic('plus','sm')} Criar cifra</button></div>`}
+  </div>`;
+};
+
+/* Visualizador (estudo e palco) */
+/* ctx.stage = aparência de palco (letra maior, tela acesa, trava). ctx.loose = aberta pela biblioteca no modo palco. */
+function openSong(id, ctx){
+  V = {id, st:ctx?.st||0, capo:0, fs: ctx?.stage ? 19 : 15, edit:false, tool:'pen', color:'#D5FF40', layer:'me', ctx:ctx||null,
+    playing:false, counting:false, pop:false, locked:false,
+    nd:'q', nrest:false, ndot:false, nacc:null, sel:null, nh:null, splaying:false}; // nd… = figura atual da partitura
+  if(!ctx?.stage || ctx.loose){ DB.recent = [{id, t:Date.now()}, ...DB.recent.filter(r => r.id !== id)].slice(0, 30); save(); }
+}
+const songDur = s => s.dur || 210; // duração da música em segundos (o músico ajusta; padrão 3:30)
+const fmtDur = sec => `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+const wide = () => innerWidth >= 900;
+function annKey(layer, st){ const sc = layer==='band' && V.ctx?.band ? V.ctx.band : 'me'; return `${V.id}|${layer==='band'?'band:'+sc:'me'}|${((st%12)+12)%12}`; }
+const strokes = (layer, st=V.st) => DB.ann[annKey(layer, st)] || (DB.ann[annKey(layer, st)] = []);
+function otherKeysWithInk(){
+  const base = song(V.id).key, out = [];
+  for(let t=0;t<12;t++){ if(t === ((V.st%12)+12)%12) continue;
+    const has = (DB.ann[annKey('me',t)]||[]).length || (V.ctx?.band && (DB.ann[annKey('band',t)]||[]).length);
+    if(has) out.push({t, k:keyName(base,t)}); }
+  return out;
+}
+function viewerHTML(){
+  const s = song(V.id), key = keyName(s.key, V.st), shapeSt = V.st - V.capo, shapeKey = keyName(s.key, shapeSt);
+  const others = otherKeysWithInk();
+  return `
+  ${V.edit && V.layer==='band'?`<div class="banner">${ic('lock','sm')} Editando a versão da banda. Os outros veem “Você está editando”.</div>`:''}
+  <div class="sheet-scroll ${V.edit?'editing':''} ${V.edit?'tool-'+V.tool:''}">
+    ${!s.score && DB.prefs.diag && s.text.trim() ? diagGrid(s.text, shapeSt, useFlats(shapeKey), V.fs) : ''}
+    <div class="sheet-wrap ${s.score ? 'scorewrap' : s.text.trim()?'':'blank'}" id="sw" style="font-size:${V.fs}px">
+      ${s.score ? paperHTML(s) : `<div class="sheet ${wide() && DB.prefs.cols===2 ? 'cols2' : ''}">${renderSheet(s.text, shapeSt, useFlats(shapeKey))}</div>`}
+      <canvas class="ink" id="ink"></canvas>
+    </div>
+  </div>
+  ${V.pop ? (s.score ? scorePopHTML(s) : popHTML(s, key, shapeKey, others)) : ''}
+  ${V.locked ? `<div class="lockcatch" data-act="lockhint"><button class="lockpill" id="lockpill" aria-label="Segure para destravar a tela">${ic('lock','sm')} Segure para destravar</button></div>` : ''}
+  <div class="fab-zone">
+    ${V.edit ? `<button class="mini" id="b-undo" data-act="undo" aria-label="Desfazer" title="Desfazer" ${undoStack().u.length?'':'hidden'}>${ic('undo')}</button>
+      <button class="mini" id="b-redo" data-act="redo" aria-label="Refazer" title="Refazer" ${undoStack().r.length?'':'hidden'}>${ic('redo')}</button>` : ''}
+    ${V.playing && !V.pop ? `<button class="mini on" data-act="play" aria-label="Pausar a rolagem">${ic('pause')}</button>` : ''}
+    ${V.splaying && !V.pop ? `<button class="mini on" data-act="splay" aria-label="Parar de ouvir">${ic('pause')}</button>` : ''}
+    <button class="fab ${V.pop?'open':''}" data-act="pop" aria-expanded="${V.pop}" aria-label="${V.pop?'Fechar ajustes':'Ajustes da cifra: tom, capo, letra, rolagem e editar'}">${ic(V.pop?'x':'sliders')}${others.length && !V.pop ? '<i class="badge" title="Há anotações em outro tom"></i>' : ''}</button>
+  </div>`;
+}
+/* Popup de ajustes: abre no botão do canto inferior direito, sem escurecer a cifra (dá para ver o tom mudar) */
+function popHTML(s, key, shapeKey, others){
+  const stp = (act, val, cls='') => `<div class="step"><button data-act="${act}" data-v="-1" aria-label="Diminuir">${ic('minus','sm')}</button><span class="val ${cls}">${val}</span><button data-act="${act}" data-v="1" aria-label="Aumentar">${ic('plus','sm')}</button></div>`;
+  const folders = (DB.folderOf[V.id]||[]);
+  return `<div class="pop-catch" data-act="popclose"></div>
+  <div class="pop" role="dialog" aria-label="Ajustes da cifra">
+    <div class="prow"><div><b>Tom</b><span class="h">${V.st ? 'Original ' + esc(s.key) : 'Tom original'}</span></div>${stp('st', esc(key) + (others.length ? '<i class="dot"></i>' : ''))}</div>
+    ${others.length ? `<div class="pnote"><i class="dot"></i>Anotações guardadas em outro tom: ${others.map(o => `<button data-act="gost" data-v="${o.t}">${esc(o.k)}</button>`).join('')}</div>` : ''}
+    <div class="prow"><div><b>Capotraste</b><span class="h">${V.capo ? `Soa em ${esc(key)}, formas de ${esc(shapeKey)}` : 'Sem capo'}</span></div>${stp('capo', V.capo || '—', 'plain')}</div>
+    <div class="prow"><div><b>Tamanho da letra</b><span class="h">${V.fs} px</span></div><div class="step"><button data-act="fs" data-v="-1" aria-label="Diminuir letra">A−</button><button data-act="fs" data-v="1" aria-label="Aumentar letra">A+</button><button data-act="fit" aria-label="Caber a música na tela" title="Caber na tela" style="width:auto;padding:0 10px">Caber</button></div></div>
+    ${wide() ? `<div class="prow"><div><b>Colunas</b><span class="h">Duas colunas mostram mais da música</span></div><div class="step"><button class="${DB.prefs.cols!==2?'on':''}" data-act="cols" data-v="1">1</button><button class="${DB.prefs.cols===2?'on':''}" data-act="cols" data-v="2">2</button></div></div>` : ''}
+    <div class="prow"><div><b>Rolagem automática</b><span class="h">${V.playing ? 'Rolando' : V.counting ? 'Começando…' : 'Parada'} · a música dura ${fmtDur(songDur(s))}</span></div>
+      <div class="step"><button data-act="dur" data-v="-1" aria-label="Música mais curta (rola mais rápido)">−15s</button><button class="${V.playing?'on':''}" data-act="play" aria-label="${V.playing?'Pausar':'Iniciar'} rolagem">${ic(V.playing?'pause':'play','sm')}</button><button data-act="dur" data-v="1" aria-label="Música mais longa (rola mais devagar)">+15s</button></div></div>
+    <div class="prow"><div><b>Diagramas dos acordes</b><span class="h">Formas no braço do violão${V.capo ? ', já com o capo' : ''}</span></div><button class="switch ${DB.prefs.diag?'on':''}" data-act="diag" role="switch" aria-checked="${!!DB.prefs.diag}" aria-label="Mostrar diagramas dos acordes"></button></div>
+    ${V.ctx?.stage && !V.ctx.loose ? '' : `<button class="prow" data-act="tosl"><div><b>Adicionar ao setlist</b><span class="h">${DB.setlists.filter(x => x.items.some(i => i.song===V.id)).map(x => esc(x.name)).join(', ') || 'Em nenhum setlist'}</span></div>${ic('next','sm')}</button>`}
+    ${V.ctx?.stage ? '' : `<button class="prow" data-act="movefolder"><div><b>Pasta</b><span class="h">${folders.length ? esc(folders.join(', ')) : 'Gênero ' + esc(s.genre) + ' · nenhuma pasta livre'}</span></div>${ic('next','sm')}</button>`}
+    ${V.edit ? '' : `<button class="btn lime block" data-act="edit">${ic('pen','sm')} Editar</button>`}
+  </div>`;
+}
+function edstripHTML(){
+  const t = (v,i,l) => `<button class="tb ${V.tool===v?'on':''}" data-act="tool" data-v="${v}" aria-label="${l}" title="${l}" aria-pressed="${V.tool===v}">${ic(i)}</button>`;
+  const cols = ['#D5FF40','#FFFFFF','#7FD8FF','#FF7A66'], score = !!song(V.id).score;
+  return `<div class="edstrip" role="toolbar" aria-label="Ferramentas de edição">
+    ${score ? t('note','note','Escrever notas') : ''}${t('hand','hand','Mover a página')}${t('pen','pen','Caneta')}${t('hl','hl','Marca-texto')}${t('eraser','eraser','Borracha')}
+    ${score && V.tool==='note' ? '' : `<span class="sep"></span>${cols.map(c=>`<button class="sw ${V.color===c?'on':''}" style="background:${c}" data-act="color" data-v="${c}" aria-label="Cor ${c}"></button>`).join('')}`}
+  </div>${score && V.tool==='note' ? notePaletteHTML() : ''}`;
+}
+/* ---------- Partitura (pauta simples) ----------
+   Papel de pauta de 5 linhas, como o papel pautado impresso. Nota = {d: figura, st: posição na pauta
+   (0 = linha de baixo, 8 = linha de cima, ímpar = espaço), acc: '#'|'b'|'n'|null, dot, rest}.
+   Desenho próprio em SVG; os símbolos (claves, acidentes, pausas) vêm da fonte Noto Music. */
+const DUR = {w:{q:4, l:'Semibreve', g:'𝅝'}, h:{q:2, l:'Mínima', g:'𝅗𝅥'}, q:{q:1, l:'Semínima', g:'♩'}, '8':{q:.5, l:'Colcheia', g:'♪'}, '16':{q:.25, l:'Semicolcheia', g:'𝅘𝅥𝅯'}};
+const DUR_W = {w:5.4, h:4.4, q:3.6, '8':3, '16':2.6};
+const RESTG = {w:'𝄻', h:'𝄼', q:'𝄽', '8':'𝄾', '16':'𝄿'};
+const SHARP_POS = [8,5,9,6,3,7,4], FLAT_POS = [4,7,3,6,2,5,1];
+const SHARP_L = [3,0,4,1,5,2,6], FLAT_L = [6,2,5,1,4,0,3]; // letras (C=0 … B=6) na ordem da armadura
+const KEY_BY_FIFTHS = ['Cb','Gb','Db','Ab','Eb','Bb','F','C','G','D','A','E','B','F#','C#'];
+const PT_NOTE = {C:'Dó',D:'Ré',E:'Mi',F:'Fá',G:'Sol',A:'Lá',B:'Si'};
+const TIMES = ['2/4','3/4','4/4','2/2','6/8','9/8','12/8'];
+const scoreKey = sc => KEY_BY_FIFTHS[sc.fifths + 7];
+const ptKey = k => PT_NOTE[k[0]] + (k[1]==='#' ? ' sustenido' : k[1]==='b' ? ' bemol' : '') + ' maior';
+const noteQ = n => DUR[n.d].q * (n.dot ? 1.5 : 1);
+const measureQ = t => { const [a, b] = t.split('/').map(Number); return a * 4 / b; };
+const newScore = () => ({clef:'G', fifths:0, time:'4/4', tempo:90, notes:[]});
+const spc = () => Math.round(V.fs * .7); // distância entre linhas da pauta (acompanha o tamanho da letra)
+const paperW = () => Math.max(260, Math.min(860, view.clientWidth - 32) - 40);
+let LAYOUT = null; // última diagramação, para saber onde o dedo tocou
+function scoreLayout(sc, W, s){
+  const head = first => s*3.6 + Math.abs(sc.fifths)*s*1.1 + (first ? s*2.8 : 0) + s*.6;
+  const cap = measureQ(sc.time), systems = [];
+  let sys = {items:[]}, x = head(true), acc = 0, measure = 1;
+  const brk = () => { systems.push(sys); sys = {items:[]}; x = head(false); };
+  sc.notes.forEach((n, i) => {
+    const hasAcc = n.acc && !n.rest, w = (DUR_W[n.d] + (n.dot ? .9 : 0) + (hasAcc ? 1.3 : 0)) * s;
+    if(x + w > W - s*.5 && sys.items.length) brk();
+    sys.items.push({type:'note', i, x: x + (hasAcc ? 1.3*s : 0) + s, m:measure}); x += w;
+    acc += noteQ(n);
+    if(acc >= cap - 1e-6){ sys.items.push({type:'bar', x: x + s*.3, over: acc > cap + 1e-6}); x += s*1.3; acc = 0; measure++; }
+  });
+  systems.push(sys);
+  let caret = {sys: systems.length - 1, x: x + s*.6};
+  if(x + s*3 > W){ caret = {sys: systems.length, x: head(false) + s*.6}; }
+  return {systems, caret, measure, left: +(cap - acc).toFixed(2), cap, s, W, head};
+}
+function noteSVG(n, i, cx, Y, s, sc, sel){
+  const k = n.st, cy = Y(k), on = sel === i;
+  let g = on ? `<rect x="${cx - s*1.1}" y="${Y(8) - s*2}" width="${s*2.2}" height="${s*8}" rx="${s*.5}" class="selbg"/>` : '';
+  if(n.rest){
+    const ry = {w:Y(6) + s*.02, h:Y(4) - s*.02}[n.d] ?? Y(4);
+    g += `<text x="${cx}" y="${ry}" class="mus rest" font-size="${s*4}" text-anchor="middle">${RESTG[n.d]}</text>`;
+    if(n.dot) g += `<circle cx="${cx + s*1.3}" cy="${Y(5)}" r="${s*.18}" class="ink-f"/>`;
+    return `<g class="nt" id="n${i}" data-i="${i}">${g}</g>`;
+  }
+  for(let l = -2; l >= k; l -= 2) g += `<line x1="${cx - s*1.05}" x2="${cx + s*1.05}" y1="${Y(l)}" y2="${Y(l)}" class="st"/>`;
+  for(let l = 10; l <= k; l += 2) g += `<line x1="${cx - s*1.05}" x2="${cx + s*1.05}" y1="${Y(l)}" y2="${Y(l)}" class="st"/>`;
+  if(n.acc) g += `<text x="${cx - s*1.45}" y="${cy}" class="mus" font-size="${s*3.2}" text-anchor="middle" dominant-baseline="central">${{'#':'♯', b:'♭', n:'♮'}[n.acc]}</text>`;
+  const open = n.d === 'w' || n.d === 'h';
+  g += `<ellipse cx="${cx}" cy="${cy}" rx="${s*.66}" ry="${s*.47}" transform="rotate(-20 ${cx} ${cy})" class="${open ? 'head open' : 'head'}"/>`;
+  if(n.d !== 'w'){
+    const up = k < 4, sx = up ? cx + s*.6 : cx - s*.6, ey = up ? cy - s*3.4 : cy + s*3.4;
+    g += `<line x1="${sx}" x2="${sx}" y1="${cy}" y2="${ey}" class="stem"/>`;
+    const flags = n.d === '8' ? 1 : n.d === '16' ? 2 : 0;
+    for(let f = 0; f < flags; f++){ const fy = ey + (up ? 1 : -1) * f * s*.85;
+      g += `<path d="M${sx} ${fy} q ${s*.2} ${up ? s*1 : -s*1} ${s*1.1} ${up ? s*1.6 : -s*1.6} q ${s*.3} ${up ? s*.5 : -s*.5} ${s*.05} ${up ? s*1.2 : -s*1.2}" class="flag"/>`; }
+  }
+  if(n.dot) g += `<circle cx="${cx + s*1.2}" cy="${k % 2 === 0 ? cy - s*.5 : cy}" r="${s*.18}" class="ink-f"/>`;
+  return `<g class="nt" id="n${i}" data-i="${i}">${g}</g>`;
+}
+function paperHTML(s){
+  const sc = s.score, sp = spc(), W = paperW(), L = scoreLayout(sc, W, sp); LAYOUT = L;
+  const H = sp*12, y0 = sp*4, Y = st => y0 + (8 - st) * sp / 2;
+  const total = Math.max(10, L.systems.length + 2), noteMode = V.edit && V.tool === 'note';
+  const [tn, td] = sc.time.split('/'), shift = sc.clef === 'F' ? -2 : 0;
+  let out = '';
+  for(let k = 0; k < total; k++){
+    const sys = L.systems[k], content = k < L.systems.length || k === L.caret.sys;
+    let g = '';
+    for(let l = 0; l <= 8; l += 2) g += `<line x1="0" x2="${W}" y1="${Y(l)}" y2="${Y(l)}" class="st"/>`;
+    g += `<line x1="0" x2="0" y1="${Y(8)}" y2="${Y(0)}" class="st"/><line x1="${W}" x2="${W}" y1="${Y(8)}" y2="${Y(0)}" class="st"/>`;
+    if(content){
+      g += sc.clef === 'G' ? `<text x="${sp*.4}" y="${Y(2)}" class="mus" font-size="${sp*4}">𝄞</text>` : `<text x="${sp*.4}" y="${Y(6)}" class="mus" font-size="${sp*4}">𝄢</text>`;
+      const pos = sc.fifths > 0 ? SHARP_POS : FLAT_POS;
+      for(let j = 0; j < Math.abs(sc.fifths); j++)
+        g += `<text x="${sp*3.9 + j*sp*1.1}" y="${Y(pos[j] + shift)}" class="mus" font-size="${sp*3.2}" text-anchor="middle" dominant-baseline="central">${sc.fifths > 0 ? '♯' : '♭'}</text>`;
+      if(k === 0){ const tx = sp*3.6 + Math.abs(sc.fifths)*sp*1.1 + sp*1.2;
+        g += `<text x="${tx}" y="${Y(6)}" class="tsig" font-size="${sp*2.3}" text-anchor="middle" dominant-baseline="central">${tn}</text><text x="${tx}" y="${Y(2)}" class="tsig" font-size="${sp*2.3}" text-anchor="middle" dominant-baseline="central">${td}</text>`; }
+    }
+    (sys?.items || []).forEach(it => {
+      if(it.type === 'bar') g += `<line x1="${it.x}" x2="${it.x}" y1="${Y(8)}" y2="${Y(0)}" class="${it.over ? 'bar over' : 'bar'}"/>`;
+      else g += noteSVG(sc.notes[it.i], it.i, it.x, Y, sp, sc, noteMode ? V.sel : -1);
+    });
+    if(noteMode && k === L.caret.sys && V.sel == null) g += `<line x1="${L.caret.x}" x2="${L.caret.x}" y1="${Y(10)}" y2="${Y(-2)}" class="caret"/>`;
+    out += `<svg class="sys" data-sys="${k}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Pauta ${k+1}">${g}</svg>`;
+  }
+  const t = s.title && s.title !== 'Sem título' ? esc(s.title) : '', c = esc(s.artist || '');
+  return `<div class="paper" style="width:${W + 40}px">
+    <button class="paper-title ${t ? '' : 'empty'}" data-act="scoremeta">${t || 'Título da música'}</button>
+    <button class="paper-comp ${c ? '' : 'empty'}" data-act="scoremeta">${c || 'Compositor'}</button>
+    <div class="paper-tempo"><span class="mus">♩</span> = ${sc.tempo}</div>
+    ${out}</div>`;
+}
+/* Paleta de notas (aparece com a ferramenta "notas") */
+function notePaletteHTML(){
+  const sc = song(V.id).score, sel = V.sel != null ? sc.notes[V.sel] : null, cur = sel || {d:V.nd, rest:V.nrest, dot:V.ndot, acc:V.nacc};
+  const L = scoreLayout(sc, paperW(), spc()), status = sel ? `Nota ${V.sel + 1} selecionada: mude a figura, o acidente ou a altura` :
+    L ? (L.left === L.cap || !sc.notes.length ? `Compasso ${L.measure} · toque na pauta para pôr a nota` : `Compasso ${L.measure} · falta${L.left > 1 ? 'm' : ''} ${String(L.left).replace('.', ',')} tempo${L.left > 1 ? 's' : ''}`) : '';
+  const b = (act, v, label, on, extra='') => `<button class="nb ${on ? 'on' : ''}" data-act="${act}" data-v="${v}" aria-pressed="${!!on}" ${extra}>${label}</button>`;
+  return `<div class="npal" role="toolbar" aria-label="Notas">
+    ${Object.entries(DUR).map(([k, d]) => b('nd', k, `<span class="mus">${cur.rest ? RESTG[k] : d.g}</span>`, cur.d === k, `aria-label="${d.l}" title="${d.l}"`)).join('')}
+    <span class="sep"></span>
+    ${b('nrest', '', 'Pausa', cur.rest)}${b('ndot', '', '•', cur.dot, 'aria-label="Ponto de aumento" title="Ponto de aumento"')}
+    ${b('nacc', '#', '<span class="mus">♯</span>', cur.acc === '#', 'aria-label="Sustenido"')}${b('nacc', 'b', '<span class="mus">♭</span>', cur.acc === 'b', 'aria-label="Bemol"')}${b('nacc', 'n', '<span class="mus">♮</span>', cur.acc === 'n', 'aria-label="Bequadro"')}
+    ${sel ? `<span class="sep"></span>${b('nmove', '1', ic('up','sm'), false, 'aria-label="Subir a nota"')}${b('nmove', '-1', ic('chev','sm'), false, 'aria-label="Descer a nota"')}${b('ndel', '', ic('x','sm'), false, 'aria-label="Apagar a nota" style="color:var(--danger)"')}` : ''}
+  </div><p class="nstatus" aria-live="polite">${status}</p>`;
+}
+function scorePopHTML(s){
+  const sc = s.score, k = scoreKey(sc);
+  return `<div class="pop-catch" data-act="popclose"></div>
+  <div class="pop" role="dialog" aria-label="Ajustes da partitura">
+    <div class="prow"><div><b>Ouvir</b><span class="h">Toca as notas no andamento</span></div><div class="step"><button class="${V.splaying?'on':''}" data-act="splay" aria-label="${V.splaying?'Parar':'Ouvir a partitura'}">${ic(V.splaying?'pause':'play','sm')}</button></div></div>
+    <div class="prow"><div><b>Clave</b><span class="h">${sc.clef === 'G' ? 'Sol: voz, violão, melodia' : 'Fá: baixo, tons graves'}</span></div><div class="step"><button class="${sc.clef==='G'?'on':''}" data-act="sclef" data-v="G" aria-label="Clave de sol"><span class="mus big">𝄞</span></button><button class="${sc.clef==='F'?'on':''}" data-act="sclef" data-v="F" aria-label="Clave de fá"><span class="mus big">𝄢</span></button></div></div>
+    <div class="prow"><div><b>Armadura</b><span class="h">${sc.fifths ? Math.abs(sc.fifths) + (sc.fifths > 0 ? '♯' : '♭') + ' · ' : 'Sem acidentes · '}${ptKey(k)}</span></div><div class="step"><button data-act="sfifths" data-v="-1" aria-label="Mais bemóis" ${sc.fifths<=-7?'disabled':''}>${ic('minus','sm')}</button><span class="val">${esc(k)}</span><button data-act="sfifths" data-v="1" aria-label="Mais sustenidos" ${sc.fifths>=7?'disabled':''}>${ic('plus','sm')}</button></div></div>
+    <div class="prow" style="flex-wrap:wrap;padding:8px 0"><div style="width:100%"><b>Compasso</b><span class="h">${sc.time==='6/8'||sc.time==='9/8'||sc.time==='12/8' ? 'Composto: conta em grupos de 3 colcheias' : 'Simples: a semínima vale um tempo'}</span></div>
+      <div class="chipwrap" style="margin-top:6px">${TIMES.map(t => `<button class="te-chip ${sc.time===t?'on':''}" data-act="stime" data-v="${t}">${t}</button>`).join('')}</div></div>
+    <div class="prow"><div><b>Andamento</b><span class="h">Semínimas por minuto</span></div><div class="step"><button data-act="stempo" data-v="-1" aria-label="Mais lento">${ic('minus','sm')}</button><span class="val plain">${sc.tempo}</span><button data-act="stempo" data-v="1" aria-label="Mais rápido">${ic('plus','sm')}</button></div></div>
+    <div class="prow"><div><b>Tamanho</b><span class="h">Pauta maior ou menor</span></div><div class="step"><button data-act="fs" data-v="-1" aria-label="Diminuir">A−</button><button data-act="fs" data-v="1" aria-label="Aumentar">A+</button></div></div>
+    ${V.ctx?.stage ? '' : `<button class="prow" data-act="tosl"><div><b>Adicionar ao setlist</b><span class="h">${DB.setlists.filter(x => x.items.some(i => i.song===V.id)).map(x => esc(x.name)).join(', ') || 'Em nenhum setlist'}</span></div>${ic('next','sm')}</button>`}
+    ${V.edit ? '' : `<button class="btn lime block" data-act="edit">${ic('pen','sm')} Editar</button>`}
+  </div>`;
+}
+/* Som: cada nota vira um tom com o andamento da folha (armadura e acidentes valem) */
+let actx = null, playT = [];
+function noteMidi(n, sc){
+  const d = (sc.clef === 'G' ? 30 : 18) + n.st, letter = ((d % 7) + 7) % 7, oct = Math.floor(d / 7);
+  let m = [0,2,4,5,7,9,11][letter] + 12 * (oct + 1);
+  if(n.acc) return m + ({'#':1, b:-1, n:0}[n.acc]);
+  if(sc.fifths > 0 && SHARP_L.slice(0, sc.fifths).includes(letter)) m++;
+  if(sc.fifths < 0 && FLAT_L.slice(0, -sc.fifths).includes(letter)) m--;
+  return m;
+}
+function stopScore(){ playT.forEach(clearTimeout); playT = []; if(V) V.splaying = false; document.querySelectorAll('.nt.pl').forEach(e => e.classList.remove('pl')); }
+function playScore(){
+  const sc = song(V.id).score; if(!sc.notes.length){ toast('Ainda não há notas para ouvir'); return; }
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume?.(); } catch(e){ toast('Este navegador não deixou tocar som'); return; }
+  stopScore(); V.splaying = true; V.pop = false; rerenderViewer();
+  const beat = 60 / sc.tempo, t0 = actx.currentTime + .12; let t = t0;
+  sc.notes.forEach((n, i) => {
+    const dur = noteQ(n) * beat;
+    if(!n.rest){ const o = actx.createOscillator(), g = actx.createGain(); o.type = 'triangle';
+      o.frequency.value = 440 * Math.pow(2, (noteMidi(n, sc) - 69) / 12);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + .02); g.gain.exponentialRampToValueAtTime(.001, t + Math.max(.12, dur * .95));
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur); }
+    playT.push(setTimeout(() => { document.querySelectorAll('.nt.pl').forEach(e => e.classList.remove('pl')); document.getElementById('n' + i)?.classList.add('pl'); }, (t - t0) * 1000 + 120));
+    t += dur;
+  });
+  playT.push(setTimeout(() => { stopScore(); rerenderViewer(); }, (t - t0) * 1000 + 300));
+}
+/* Toque na pauta: perto de uma nota, seleciona; no resto, põe a nota no fim, na altura tocada */
+function scoreTap(e){
+  const svg = e.target.closest('svg.sys'); if(!svg || !V?.edit || V.tool !== 'note') return;
+  const sc = song(V.id).score, L = LAYOUT, s = L.s, r = svg.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const st = Math.max(-6, Math.min(14, Math.round(8 - (y - s*4) / (s/2)))), sysI = +svg.dataset.sys;
+  const hit = (L.systems[sysI]?.items || []).find(it => it.type === 'note' && Math.abs(it.x - x) < s*1.1);
+  if(hit){ V.sel = V.sel === hit.i ? null : hit.i; rerenderViewer(); return; }
+  if(V.sel != null){ V.sel = null; rerenderViewer(); return; }
+  pushNotes(); sc.notes.push({d:V.nd, st, acc: V.nrest ? null : V.nacc, dot:V.ndot, rest:V.nrest});
+  V.nacc = null; save(); rerenderViewer();
+  if(!V.nrest) previewNote(sc.notes[sc.notes.length - 1], sc);
+}
+function previewNote(n, sc){ try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+  o.type = 'triangle'; o.frequency.value = 440 * Math.pow(2, (noteMidi(n, sc) - 69) / 12); g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.001, t + .35);
+  o.connect(g).connect(actx.destination); o.start(t); o.stop(t + .4); } catch(e){} }
+/* Desfazer: com a ferramenta notas, desfaz notas; com as outras, desfaz traços */
+const isNoteUndo = () => V?.edit && V.tool === 'note' && song(V.id)?.score;
+const undoStack = () => isNoteUndo() ? (V.nh || (V.nh = {u:[], r:[]})) : hist;
+function pushNotes(){ const h = undoStack(); h.u.push(JSON.stringify(song(V.id).score.notes)); h.r = []; }
+document.addEventListener('click', scoreTap);
+/* Cabeçalho do visualizador: normal (voltar + título + tom) ou edição (camada + concluir) */
+function vhead(left, title, sub, right){
+  const s = song(V.id), key = keyName(s.key, V.st), dot = otherKeysWithInk().length ? '<i class="dot"></i>' : '';
+  if(V.edit) return `<div class="vhead"><header class="topbar">
+    <span class="layer-tag">${V.layer==='band'?'BANDA':'SÓ PRA MIM'}</span>
+    <div class="t"><b>Editando</b><span>${esc(s.title)}</span></div>
+    ${V.ctx?.stage ? '' : s.score ? `<button class="icon-b" data-act="scoremeta" aria-label="Título e compositor" title="Título e compositor">${ic('text')}</button>`
+      : `<button class="icon-b" data-act="edittext" aria-label="Editar texto da cifra" title="Editar texto">${ic('text')}</button>`}
+    ${V.layer==='band'?'<button class="btn ghost" data-act="discard">Descartar</button>':''}
+    <button class="btn lime" data-act="done">${V.layer==='band'?'Salvar':'Concluir'}</button>
+  </header>${edstripHTML()}</div>`;
+  return `<div class="vhead"><header class="topbar">${left}<div class="t"><b>${title}</b><span>${sub}</span></div>${right||''}
+    ${V.ctx?.stage ? `<button class="icon-b" data-act="lock" aria-label="Travar a tela contra toques acidentais" title="Travar a tela">${ic('lock')}</button>` : ''}
+    ${s.score ? `<button class="keypill" data-act="pop" aria-label="Ajustes da partitura">${ic('note','sm')}<b>${esc(scoreKey(s.score))}</b> · ${esc(s.score.time)}</button>`
+      : `<button class="keypill" data-act="pop" aria-label="Tom ${esc(key)}. Abrir ajustes">Tom <b>${esc(key)}</b>${V.capo?` · capo ${V.capo}`:''}${dot}</button>`}</header></div>`;
+}
+SCREENS.song = () => {
+  const s = song(V.id);
+  return vhead(`<button class="icon-b" data-act="back" aria-label="Voltar">${ic('back')}</button>`, esc(s.title),
+    `${V.ctx?.stage ? 'Palco · ' : ''}${esc(s.artist)} · ${esc(s.genre)}${s.bpm ? ' · ' + s.bpm + ' BPM' : ''}${V.ctx?.band?' · '+esc(band(V.ctx.band).name):''}`) + viewerHTML();
+};
+SCREENS.perform = c => {
+  const sl = DB.setlists.find(x => x.id === c.sl), it = sl.items[c.i], s = song(it.song), nx = sl.items[c.i+1];
+  return vhead(`<button class="icon-b" data-act="exitstage" aria-label="Sair do modo palco">${ic('x')}</button>`, esc(s.title),
+    `${c.i+1} de ${sl.items.length} · ${esc(sl.name)}`, `<span class="pill lime" title="Funciona sem internet">${ic('wifi','sm')}<span class="hide-s"> Offline ok</span></span>`) +
+    `${viewerHTML()}
+    <div class="stagebar">
+      <button class="pv" data-act="stagego" data-v="-1" ${c.i===0?'disabled':''} aria-label="Música anterior">${ic('back')}</button>
+      <button class="nx" data-act="stagego" data-v="1" ${nx?'':'disabled'}><span style="min-width:0"><span>Próxima</span><b>${nx?esc(song(nx.song).title)+' · '+esc(keyName(song(nx.song).key, nx.st)):'Fim do setlist'}</b></span>${ic('next')}</button>
+    </div>`;
+};
+
+/* Bandas */
+SCREENS.bands = () => `<div class="wrap">
+  <div class="head"><div><div class="label">Tocando junto</div><h1>Bandas</h1></div></div>
+  <div class="stack">
+    ${DB.bands.map(b => b.waiting ? `<div class="card"><div class="row" style="justify-content:space-between"><h2>${esc(b.name)}</h2><span class="pill warn">Aguardando aprovação</span></div><p class="sub">Você entra assim que o líder aprovar o pedido.</p></div>` :
+      `<button class="card" data-act="openband" data-id="${b.id}"><div class="row" style="justify-content:space-between"><h2>${esc(b.name)}</h2><span class="pill lime">${b.role==='lider'?'Líder':b.role==='editor'?'Editor':'Membro'}</span></div>
+      <p class="sub">${b.members.length} músicos · ${b.songs.length} músicas · ${DB.setlists.filter(s=>s.band===b.id).length} setlists${b.pending.length?` · <span style="color:var(--danger)">${b.pending.length} pedido</span>`:''}</p></button>`).join('')}
+    <div class="row" style="flex-wrap:wrap"><button class="btn lime" data-act="joinband">Entrar com código</button><button class="btn" data-act="newband">Criar banda</button></div>
+  </div></div>`;
+SCREENS.band = c => {
+  const b = band(c.id), lead = b.role === 'lider';
+  let body = '';
+  if(S.bandTab === 'rep') body = `<div class="list">${b.songs.map(id => { const s = song(id); return `<button class="song" data-act="openbandsong" data-id="${id}" data-b="${b.id}"><span class="keytile">${esc(s.key)}</span><span class="song-meta"><span class="song-t">${esc(s.title)}</span><span class="song-s">Versão da banda · ${esc(s.genre)}</span></span></button>`; }).join('')}</div>`;
+  if(S.bandTab === 'sets') body = (setlistCards(b.id) || `<div class="empty">${ic('mic')}<div><b>Nenhum setlist ainda</b></div></div>`) +
+    (lead ? `<button class="btn block" style="margin-top:12px" data-act="newsl" data-b="${b.id}">${ic('plus','sm')} Novo setlist da banda</button>` : '');
+  if(S.bandTab === 'mem') body = `<div class="stack">
+    ${b.pending.length?`<div class="label">Pedidos para entrar</div>${b.pending.map((p,i)=>`<div class="member"><div class="av">${esc(p.n[0])}</div><div class="mm"><b>${esc(p.n)}</b><span>${esc(p.i)} · quer entrar na banda</span></div>${lead?`<button class="btn ghost" data-act="deny" data-i="${i}" data-b="${b.id}">Recusar</button><button class="btn lime" data-act="approve" data-i="${i}" data-b="${b.id}">Aprovar</button>`:''}</div>`).join('')}`:''}
+    <div class="label">Membros</div>
+    ${b.members.map((m,i)=>`<div class="member"><div class="av">${esc(m.n[0])}</div><div class="mm"><b>${esc(m.n)}</b><span>${esc(m.i)} · ${m.r==='lider'?'Líder':m.r==='editor'?'Pode editar a versão da banda':'Edita só a própria cifra'}</span></div>
+      ${m.r==='lider'?'<span class="pill lime">Líder</span>':lead?`<button class="switch ${m.r==='editor'?'on':''}" data-act="role" data-i="${i}" data-b="${b.id}" role="switch" aria-checked="${m.r==='editor'}" aria-label="Liberar ${esc(m.n)} para editar a versão da banda"></button>`:''}</div>`).join('')}
+    ${lead?'<p class="sub">Ligue a chave para liberar alguém a editar a versão da banda (ex.: o diretor musical).</p>':''}</div>`;
+  return `<header class="topbar"><button class="icon-b" data-act="back" aria-label="Voltar">${ic('back')}</button><div class="t"><b>${esc(b.name)}</b><span>Código de convite: ${esc(b.code)}</span></div><button class="icon-b" data-act="copycode" data-v="${esc(b.code)}" aria-label="Copiar código">${ic('copy')}</button></header>
+  <div class="wrap">
+    <div class="seg" role="tablist">${[['rep','Repertório'],['sets','Setlists'],['mem','Membros']].map(([k,l])=>`<button class="${S.bandTab===k?'on':''}" data-act="bandtab" data-v="${k}">${l}</button>`).join('')}</div>
+    ${body}</div>`;
+};
+/* Setlists: os pessoais (band:null) são de quem toca sozinho; os da banda, o líder edita */
+const slOwner = sl => sl.band ? band(sl.band)?.name || 'Banda' : 'Só eu';
+const canEditSl = sl => !sl.band || band(sl.band)?.role === 'lider';
+const today = () => { const d = new Date(); return `${d.getDate()} ${MON[d.getMonth()]}`; };
+function setlistCards(bid, list){
+  const sls = list || DB.setlists.filter(s => !bid || s.band === bid);
+  if(!sls.length) return '';
+  return `<div class="list two">${sls.map(sl => `<button class="card" data-act="opensl" data-id="${sl.id}"><div class="label">${esc(sl.date)} · ${esc(slOwner(sl))}</div><h2 style="margin:4px 0 6px">${esc(sl.name)}</h2><p class="sub">${sl.items.length ? sl.items.map(it=>esc(song(it.song)?.title||'')).join(' · ') : 'Nenhuma música ainda'}</p></button>`).join('')}</div>`;
+}
+SCREENS.stage = () => {
+  const mine = DB.setlists.filter(s => !s.band), bands = DB.setlists.filter(s => s.band);
+  return `<div class="wrap"><div class="head"><div><div class="label">Ao vivo</div><h1>Palco</h1></div><button class="btn lime" data-act="newsl">${ic('plus','sm')} Novo setlist</button></div>
+  <p class="sub" style="margin:-6px 0 18px">Escolha o setlist do show. No palco, a tela fica acesa, dá para travar contra toques e funciona sem internet.</p>
+  <div class="sh" style="margin:0 0 10px"><h2>Meus setlists</h2></div>
+  ${setlistCards(null, mine) || `<div class="empty" style="padding:24px 16px">${ic('mic')}<div><b>Nenhum setlist seu ainda</b></div><div class="sub">Monte o repertório do show na ordem, com o tom de cada música.</div><button class="btn" style="margin-top:12px" data-act="newsl">${ic('plus','sm')} Criar setlist</button></div>`}
+  ${bands.length ? `<div class="sh" style="margin:22px 0 10px"><h2>Das bandas</h2></div>${setlistCards(null, bands)}` : ''}</div>`;
+};
+SCREENS.setlist = c => {
+  const sl = DB.setlists.find(x => x.id === c.id), ed = canEditSl(sl), editing = ed && S.slEdit;
+  const row = (it, i) => { const s = song(it.song), k = keyName(s.key, it.st);
+    if(editing) return `<div class="sl-item edit"><span class="sl-n">${i+1}</span><div class="song-meta"><span class="song-t">${esc(s.title)}</span><span class="song-s">Original ${esc(s.key)}${it.st?` · show em ${esc(k)}`:''}</span></div>
+      <button class="icon-b" data-act="slrm" data-i="${i}" aria-label="Tirar ${esc(s.title)} do setlist">${ic('x','sm')}</button>
+      <div class="sl-ctl"><div class="step"><button data-act="slmv" data-i="${i}" data-v="-1" ${i===0?'disabled':''} aria-label="Subir">${ic('up','sm')}</button><button data-act="slmv" data-i="${i}" data-v="1" ${i===sl.items.length-1?'disabled':''} aria-label="Descer">${ic('chev','sm')}</button></div>
+        <div class="step"><button data-act="slst" data-i="${i}" data-v="-1" aria-label="Baixar o tom">${ic('minus','sm')}</button><span class="val">${esc(k)}</span><button data-act="slst" data-i="${i}" data-v="1" aria-label="Subir o tom">${ic('plus','sm')}</button></div></div></div>`;
+    return `<div class="sl-item"><span class="sl-n">${i+1}</span><div class="song-meta"><span class="song-t">${esc(s.title)}</span><span class="song-s">${esc(s.genre)}${it.st?` · original ${esc(s.key)}, show em ${esc(k)}`:''}</span></div>${it.lockedBy?`<span class="pill warn">${ic('lock','sm')}<span class="hide-s"> ${esc(it.lockedBy)} editando</span></span>`:''}<span class="keytile" style="width:44px;height:44px;font-size:15px">${esc(k)}</span></div>`; };
+  return `<header class="topbar"><button class="icon-b" data-act="back" aria-label="Voltar">${ic('back')}</button><div class="t"><b>${esc(sl.name)}</b><span>${esc(sl.date)} · ${esc(slOwner(sl))}</span></div>
+    ${ed ? `<button class="btn ${editing?'lime':''}" data-act="sledit">${editing?'Pronto':'Editar'}</button>` : ''}</header>
+  <div class="wrap"><div class="stack">
+    <div class="row"><span class="pill lime">${ic('down','sm')} Baixado para usar sem internet</span>${!ed?'<span class="pill">Só o líder edita</span>':''}</div>
+    ${sl.items.length ? sl.items.map(row).join('') : `<div class="empty" style="padding:24px 16px">${ic('lib')}<div><b>Setlist vazio</b></div><div class="sub">Adicione as músicas na ordem do show.</div></div>`}
+    ${editing || (ed && !sl.items.length) ? `<button class="btn block" data-act="sladd" data-id="${sl.id}">${ic('plus','sm')} Adicionar músicas</button>` : ''}
+    ${editing ? `<button class="btn ghost block" data-act="sldel" data-id="${sl.id}" style="color:var(--danger)">Apagar setlist</button>` : ''}
+    <button class="btn lime block big-cta" data-act="startstage" data-id="${sl.id}" ${sl.items.length?'':'disabled'}>${ic('mic')} Entrar no modo palco</button>
+  </div></div>`;
+};
+SCREENS.profile = () => `<div class="wrap"><div class="head"><div><div class="label">Conta</div><h1>Perfil</h1></div></div>
+  <div class="stack">
+    <div class="member"><div class="av" style="background:var(--lime);color:var(--lime-ink)">${esc((DB.user.name||'V')[0].toUpperCase())}</div>
+      <div class="mm"><b>${esc(DB.user.name)}</b><span>${DB.user.guest ? 'Sem conta · seus dados ficam só neste aparelho' : `${esc(instList(DB.user))} · ${esc(DB.user.email || METHOD_NAME[DB.user.method] || '')}`}</span></div></div>
+    ${DB.user.guest ? '' : syncHTML()}
+    ${DB.user.guest ? `<div class="note">Crie sua conta para entrar em bandas e ter suas cifras em qualquer aparelho. O que você já salvou continua aqui.</div>
+      <button class="btn lime block" data-act="logout" data-v="upgrade">${ic('user','sm')} Criar conta ou entrar</button>`
+      : `<div class="label" style="margin-top:8px">Instrumento</div><div class="chipwrap">${INSTR.map(i => { const on = (DB.user.insts||[]).includes(i);
+        return `<button class="fbtn ${on?'on':''}" data-act="setinst" data-v="${i}" aria-pressed="${on}">${i}</button>`; }).join('')}</div>`}
+    <div class="label" style="margin-top:8px">Modo de uso</div>
+    <div class="seg" style="margin:0" role="radiogroup" aria-label="Modo de uso">
+      <button class="${DB.mode==='estudo'?'on':''}" data-act="setmode" data-v="estudo" role="radio" aria-checked="${DB.mode==='estudo'}">${ic('lib','sm')} Estudo</button>
+      <button class="${DB.mode==='palco'?'on':''}" data-act="setmode" data-v="palco" role="radio" aria-checked="${DB.mode==='palco'}">${ic('mic','sm')} Palco</button></div>
+    <p class="sub" style="margin:0">${DB.mode==='palco'?'Palco: Biblioteca, Bandas e Palco na barra.':'Estudo: Biblioteca, Recentes e Minhas na barra.'} A escolha também aparece toda vez que o app abre.</p>
+    <div class="label" style="margin-top:8px">Preferências</div>
+    <div class="member" style="flex-wrap:wrap"><div class="mm" style="min-width:200px"><b>Sustenido ou bemol</b><span>Como os acordes aparecem ao trocar de tom</span></div>
+      <div class="seg" style="margin:0;flex:1;min-width:240px">${[['auto','Automático'],['sharp','♯ Sustenido'],['flat','♭ Bemol']].map(([v,l]) => `<button class="${(DB.prefs.acc||'auto')===v?'on':''}" data-act="setacc" data-v="${v}">${l}</button>`).join('')}</div></div>
+    <div class="member"><div class="mm"><b>Só a caneta desenha</b><span>Com Apple Pencil: a caneta escreve e o dedo rola a página. Liga sozinho quando o app percebe a caneta.</span></div><button class="switch ${DB.prefs.penOnly?'on':''}" data-act="penonly" role="switch" aria-checked="${!!DB.prefs.penOnly}" aria-label="Só a caneta desenha"></button></div>
+    <div class="member"><div class="mm"><b>Tela sempre acesa no palco</b><span>Evita que o tablet apague no meio da música</span></div><span class="switch on" aria-hidden="true"></span></div>
+    <div class="member"><div class="mm"><b>Pedal Bluetooth e teclado</b><span>→ ou Page Down: próxima música · ← ou Page Up: anterior · ↓ ↑: rolam a tela · Espaço: inicia ou pausa a rolagem</span></div></div>
+    <div class="member"><div class="mm"><b>Partitura</b><span>Ler e escrever partitura</span></div><span class="pill">v3</span></div>
+    ${DB.user.guest ? '' : `<button class="btn block" data-act="logout">${ic('logout','sm')} Sair da conta</button>`}
+    <button class="btn ghost" data-act="reset">Restaurar dados de exemplo</button>
+  </div></div>`;
+
+/* Prévia da importação e editor */
+SCREENS.preview = () => {
+  const p = S.pending;
+  return `<header class="topbar"><button class="icon-b" data-act="back" aria-label="Voltar">${ic('back')}</button><div class="t"><b>Conferir antes de salvar</b><span>${p.source==='link'?'Importado por link':'Reconhecido do texto colado'}</span></div></header>
+  <div class="wrap"><div class="stack">
+    ${p.source==='link' ? (p.demo ? '<div class="note">Exemplo simulado: este link não pôde ser lido, então mostramos como a cifra ficaria. Na versão final, o servidor do app lê a página e monta a cifra assim.</div>'
+      : `<div class="note">Lido de verdade de ${esc(new URL(p.url).hostname)}. Confira título, artista e tom antes de salvar.</div>`)
+      : '<div class="note">O app separou acordes, letra, partes e tablaturas do texto que você colou. Confira o tom e salve.</div>'}
+    ${metaFields(p)}
+    <div class="card" style="overflow-x:auto"><div class="sheet-wrap" style="font-size:14px"><div class="sheet">${renderSheet(p.text,0,useFlats(p.key))}</div></div></div>
+    <button class="btn lime block big-cta" data-act="savepending">${ic('check')} Salvar na biblioteca</button>
+  </div></div>`;
+};
+function metaFields(p){
+  return `<div class="list two" style="gap:12px">
+    <div class="field"><label for="f-title">Título</label><input class="input" id="f-title" value="${esc(p.title)}"></div>
+    <div class="field"><label for="f-artist">Artista</label><input class="input" id="f-artist" value="${esc(p.artist)}"></div>
+    <div class="field"><label for="f-key">Tom</label><select class="input" id="f-key">${KEYS.map(k=>`<option ${k===p.key?'selected':''}>${k}</option>`).join('')}</select></div>
+    <div class="field"><label for="f-genre">Gênero (pasta)</label><input class="input" id="f-genre" value="${esc(p.genre)}" list="genres"><datalist id="genres">${[...new Set(DB.songs.map(s=>s.genre))].map(g=>`<option value="${esc(g)}">`).join('')}</datalist></div>
+  </div>`;
+}
+SCREENS.editor = () => {
+  const p = S.pending;
+  const mode = p.mode || (p.editId ? 'tap' : 'text'); // cifra nova: primeiro a letra; cifra existente: acordes no toque
+  const help = {text:'Acordes na linha de cima, letra na de baixo · partes entre colchetes: [Refrão]',
+    tap:'Toque na sílaba onde o acorde entra. Toque num acorde para trocar ou tirar.', prev:'Como a cifra vai aparecer'}[mode];
+  return `<header class="topbar"><button class="icon-b" data-act="back" aria-label="Voltar">${ic('back')}</button><div class="t"><b>${p.editId?'Editar cifra':'Nova '+esc(p.fmt.toLowerCase())}</b><span>${help}</span></div></header>
+  <div class="wrap"><div class="stack">
+    ${metaFields(p)}
+    <div class="seg" style="margin:0">${[['tap','Acordes'],['text','Texto'],['prev','Prévia']].map(([v,l]) => `<button class="${mode===v?'on':''}" data-act="edmode" data-v="${v}">${l}</button>`).join('')}</div>
+    ${mode==='prev' ? `<div class="card"><div class="sheet-wrap" style="font-size:14px"><div class="sheet">${renderSheet(p.text,0,false)}</div></div></div>`
+      : mode==='tap' ? `<div class="card tapedit">${tapEditorHTML(p.text)}</div><p class="sub" style="margin:0">Para escrever ou apagar a letra, use a aba Texto.</p>`
+      : `<textarea class="input" id="f-text" spellcheck="false" style="min-height:340px">${esc(p.text)}</textarea>`}
+    <button class="btn lime block big-cta" data-act="saveeditor">${ic('check')} Salvar</button>
+  </div></div>`;
+};
+/* Editor por toque: cada letra da linha é um alvo; o acorde fica preso à coluna da sílaba.
+   As palavras quebram linha inteiras, então funciona no celular sem rolar para o lado. */
+function tapLineHTML(ci, li, chLine, lyric){
+  const at = {}; chLine.replace(/\S+/g, (t, i) => { at[i] = t; return t; });
+  const cols = Object.keys(at).map(Number), len = Math.max(lyric.length, cols.length ? Math.max(...cols) + 1 : 0, 1);
+  let out = '', word = false;
+  for(let c = 0; c < len; c++){
+    const ch = lyric[c] || ' ', sp = ch === ' ';
+    if(sp && word){ out += '</span>'; word = false; }
+    if(!sp && !word){ out += '<span class="tw">'; word = true; }
+    out += `<span class="tc ${at[c]?'has':''}" data-act="tapch" data-ci="${ci ?? ''}" data-li="${li}" data-c="${c}">${at[c] ? `<i class="tch">${esc(at[c])}</i>` : ''}${sp ? '&nbsp;' : esc(ch)}</span>`;
+  }
+  if(word) out += '</span>';
+  return `<div class="te-line">${out}</div>`;
+}
+function tapEditorHTML(text){
+  const L = text.split('\n'); let h = '';
+  for(let i = 0; i < L.length; i++){
+    const line = L[i];
+    if(isTabLine(line) || isSecLine(line)){ h += `<div class="te-plain">${esc(line)}</div>`; continue; }
+    if(chordRowAt(L, i)){
+      if(isLyric(L[i+1])){ h += tapLineHTML(i, i+1, line, L[i+1]); i++; continue; }
+      const toks = []; line.replace(/\S+/g, (t, c) => { toks.push([c, t]); return t; });
+      h += `<div class="te-chords">${toks.map(([c,t]) => `<button class="te-chip" data-act="tapch" data-ci="${i}" data-li="" data-c="${c}">${esc(t)}</button>`).join('')}<button class="te-chip add" data-act="tapch" data-ci="${i}" data-li="" data-c="${line.length + 2}" aria-label="Adicionar acorde nesta linha">＋</button></div>`; continue;
+    }
+    if(!line.trim()){ h += '<div class="te-plain">&nbsp;</div>'; continue; }
+    h += tapLineHTML(null, i, '', line);
+  }
+  return h;
+}
+/* Coloca (ou tira, se chord vazio) um acorde na coluna c de uma linha de acordes, sem encavalar com os vizinhos */
+function placeChord(line, c, chord){
+  const toks = []; line.replace(/\S+/g, (t, i) => { if(i !== c) toks.push([i, t]); return t; });
+  if(chord) toks.push([c, chord]);
+  toks.sort((a, b) => a[0] - b[0]);
+  let out = ''; for(const [i, t] of toks){ out = out.padEnd(Math.max(i, out.length ? out.length + 1 : 0), ' ') + t; }
+  return out;
+}
+function setChordAt(p, ci, li, c, chord){
+  const L = p.text.split('\n');
+  if(ci === null){ if(!chord) return; L.splice(li, 0, ''); ci = li; }
+  L[ci] = placeChord(L[ci], c, chord);
+  if(!L[ci].trim() && li !== null) L.splice(ci, 1); // linha de acordes vazia sobre a letra: some
+  p.text = L.join('\n');
+}
+function readMeta(){
+  const p = S.pending, g = id => document.getElementById(id);
+  if(g('f-title')) p.title = g('f-title').value.trim() || 'Sem título';
+  if(g('f-artist')) p.artist = g('f-artist').value.trim() || 'Autoral';
+  if(g('f-key')) p.key = g('f-key').value;
+  if(g('f-genre')) p.genre = g('f-genre').value.trim() || 'Sem gênero';
+  if(g('f-text')) p.text = cleanText(g('f-text').value);
+}
+function addSong(p){
+  const id = 's' + Date.now().toString(36);
+  const origin = p.source==='link' ? 'link' : p.source==='paste' ? 'colada' : 'autoral';
+  DB.songs.unshift({id, title:p.title, artist:p.artist, genre:p.genre, key:p.key, bpm:null, fmt:p.fmt||'Cifra', text:p.text, origin, url:p.url||null, ...(p.score ? {score:p.score} : {})});
+  save(); return id;
+}
+
+/* ---------- Modais ---------- */
+const modal = document.getElementById('modal');
+function openModal(m){ S.modal = m; drawModal(); }
+function closeModal(){ S.modal = null; modal.innerHTML = ''; }
+function drawModal(){
+  const m = S.modal; if(!m){ modal.innerHTML=''; return; }
+  const head = (t, backTo) => `<div class="grab"></div><div class="mhead">${backTo?`<button class="icon-b" data-act="mstep" data-v="${backTo}" aria-label="Voltar">${ic('back')}</button>`:''}<h2 style="flex:1">${t}</h2><button class="icon-b" data-act="mclose" aria-label="Fechar">${ic('x')}</button></div>`;
+  let h = '';
+  if(m.name==='create'){
+    if(m.step==='home') h = head('Adicionar música') + `<div class="stack">
+      <button class="opt" data-act="mstep" data-v="link"><span class="oi">${ic('link')}</span><span><b>Colar um link</b><span>Endereço de uma cifra na internet. O app monta tudo no layout dele.</span></span></button>
+      <button class="opt" data-act="mstep" data-v="paste"><span class="oi">${ic('paste')}</span><span><b>Colar o texto</b><span>Copie a cifra de onde quiser e cole aqui.</span></span></button>
+      <button class="opt lime" data-act="mstep" data-v="zero"><span class="oi">${ic('newdoc')}</span><span><b>Escrever do zero</b><span>Cifra, tablatura, partitura ou folha em branco.</span></span></button></div>`;
+    if(m.step==='link') h = head('Colar um link','home') + `<div class="stack"><div class="field"><label for="m-url">Endereço da cifra</label><input class="input" id="m-url" inputmode="url" placeholder="https://www.site-de-cifras.com/artista/musica/" value="${esc(m.url||'')}"></div>
+      <div class="note">No site da cifra, toque em Compartilhar → Copiar link e cole aqui. O app tenta ler a página; se o site bloquear, você cola o texto em seguida.</div>
+      <button class="btn block" data-act="clippaste" data-v="m-url">${ic('paste','sm')} Colar o que copiei</button><button class="btn lime block" data-act="readlink">Ler cifra</button></div>`;
+    if(m.step==='loading') h = head('Lendo a cifra') + `<div class="spin"></div><p class="sub" style="text-align:center">Abrindo ${esc(m.host||'a página')} e procurando acordes, letra e partes…</p>`;
+    if(m.step==='linkfail') h = head('Não deu para ler este link','link') + `<div class="stack">
+      <div class="note">${m.why==='nocifra' ? `A página de ${esc(m.host)} abriu, mas não encontrei uma cifra nela.`
+        : `O site ${esc(m.host)} não deixou o navegador ler a página. Isso é esperado: sites de cifra bloqueiam a leitura direta. Na versão final, quem lê o link é o servidor do app.`}</div>
+      <button class="opt lime" data-act="mstep" data-v="paste"><span class="oi">${ic('paste')}</span><span><b>Colar o texto</b><span>Abra a cifra no site, copie tudo e cole aqui.</span></span></button>
+      <button class="opt" data-act="linkdemo"><span class="oi">${ic('cifra')}</span><span><b>Ver como ficaria</b><span>Mostra a prévia com uma cifra de exemplo.</span></span></button></div>`;
+    if(m.step==='paste') h = head('Colar o texto','home') + `<div class="stack"><div class="field"><label for="m-text">${m.blank?'Cole aqui a cifra copiada do site':'Cifra copiada (já tem um exemplo, pode trocar)'}</label><textarea class="input" id="m-text" spellcheck="false" placeholder="[Intro] G  D  Em  C">${m.blank?'':esc(PASTE_SAMPLE)}</textarea></div>
+      <button class="btn block" data-act="clippaste" data-v="m-text">${ic('paste','sm')} Colar o que copiei</button><button class="btn lime block" data-act="parsepaste">Reconhecer cifra</button></div>`;
+    if(m.step==='zero') h = head('Escrever do zero','home') + `<div class="fmt-grid">
+      <button class="opt" data-act="zero" data-v="Cifra"><span class="oi">${ic('cifra')}</span><span><b>Cifra</b><span>Acordes sobre a letra</span></span></button>
+      <button class="opt" data-act="zero" data-v="Cifra + tab"><span class="oi">${ic('mix')}</span><span><b>Cifra + tablatura</b><span>Letra, acordes e solos</span></span></button>
+      <button class="opt" data-act="zero" data-v="Tablatura"><span class="oi">${ic('tab')}</span><span><b>Tablatura</b><span>Riffs e solos, 6 cordas</span></span></button>
+      <button class="opt" data-act="zero" data-v="Partitura"><span class="oi">${ic('staff')}</span><span><b>Partitura</b><span>Pauta, compasso e notas</span></span></button>
+      <button class="opt" data-act="zero" data-v="Folha em branco" style="grid-column:1/-1;min-height:84px;flex-direction:row;align-items:center"><span class="oi">${ic('blank')}</span><span><b>Folha em branco</b><span>Só a caneta: escreva e desenhe à mão.</span></span></button></div>`;
+  }
+  if(m.name==='choice'){
+    const it = m.item, b = band(V.ctx.band), canBand = b.role==='lider'||b.role==='editor';
+    const blocked = it?.lockedBy ? `${esc(it.lockedBy)} está editando esta música agora.` : !canBand ? 'Só o líder e quem ele liberar editam a versão da banda.' : '';
+    h = head('O que você quer editar?') + `<div class="stack">
+      <button class="opt" data-act="startedit" data-v="me"><span class="oi">${ic('user')}</span><span><b>Só pra mim</b><span>Suas anotações. Ninguém mais da banda vê.</span></span></button>
+      <button class="opt lime" data-act="startedit" data-v="band" ${blocked?'disabled':''}><span class="oi">${ic(blocked?'lock':'band')}</span><span><b>Pra banda toda</b><span>${blocked||'Muda a versão que todos veem. Atualiza em tempo real ao salvar.'}</span></span></button></div>`;
+  }
+  if(m.name==='input'){
+    h = head(m.title) + `<div class="stack"><div class="field"><label for="m-in">${m.label}</label><input class="input" id="m-in" placeholder="${m.ph||''}"></div><button class="btn lime block" data-act="minput">${m.cta}</button></div>`;
+  }
+  if(m.name==='filter'){
+    const k = m.kind, cur = S.f[k];
+    const cnt = fn => DB.songs.filter(fn).length;
+    let title, opts, grid = false;
+    if(k==='folder'){ title = 'Pasta'; opts = [[null,'Todas as pastas',DB.songs.length], ...DB.folders.map(f => [f, f, cnt(s => (DB.folderOf[s.id]||[]).includes(f))])]; }
+    if(k==='genre'){ title = 'Gênero'; opts = [[null,'Todos os gêneros',DB.songs.length], ...genres().map(g => [g, g, cnt(s => s.genre===g)])]; }
+    if(k==='key'){ title = 'Tom original'; grid = true; opts = [[null,'Todos',DB.songs.length], ...keysInLib().map(x => [x, x, cnt(s => s.key===x)])]; }
+    if(k==='sort'){ title = 'Ordenar'; opts = Object.entries(SORTS).map(([v,l]) => [v, l, null]); }
+    h = head(title) + `<div class="olist ${grid?'grid':''}">${opts.map(([v,l,n]) => `<button class="orow ${cur===v?'on':''}" data-act="setf" data-k="${k}" data-v="${esc(v??'')}" aria-pressed="${cur===v}">
+        ${cur===v && !grid ? ic('check','sm') : ''}<span>${esc(l)}</span>${n!=null?`<span class="c">${n}</span>`:''}</button>`).join('')}</div>
+      ${k==='folder' ? `${DB.folders.length?'':'<p class="sub">Você ainda não criou pastas livres. As pastas por gênero ficam no filtro Gênero.</p>'}<button class="btn block" style="margin-top:12px" data-act="newfolder">${ic('plus','sm')} Nova pasta</button>` : ''}`;
+  }
+  if(m.name==='pick'){ // adicionar músicas a um setlist
+    const sl = DB.setlists.find(x => x.id === m.sl), inSl = id => sl.items.some(i => i.song === id);
+    h = head('Músicas do setlist') + `<p class="sub" style="margin:-6px 0 12px">Toque para pôr ou tirar. Entram no fim, na ordem em que você tocar.</p>
+      <div class="olist">${DB.songs.map(s => `<button class="orow ${inSl(s.id)?'on':''}" data-act="pickt" data-id="${s.id}" aria-pressed="${inSl(s.id)}">${ic(inSl(s.id)?'check':'plus','sm')}<span>${esc(s.title)}</span><span class="c">${esc(s.key)}</span></button>`).join('')}</div>
+      <button class="btn lime block" style="margin-top:14px" data-act="mclose">Pronto · ${sl.items.length} músicas</button>`;
+  }
+  if(m.name==='tosl'){ // adicionar a música aberta a um setlist
+    const mine = DB.setlists.filter(canEditSl);
+    h = head('Adicionar ao setlist') + `<div class="olist">${mine.map(sl => { const on = sl.items.some(i => i.song === V.id);
+      return `<button class="orow ${on?'on':''}" data-act="toslt" data-id="${sl.id}" aria-pressed="${on}">${ic(on?'check':'plus','sm')}<span>${esc(sl.name)}</span><span class="c">${esc(slOwner(sl))}</span></button>`; }).join('') || '<p class="sub">Você ainda não tem setlists.</p>'}</div>
+      <button class="btn block" style="margin-top:12px" data-act="newsl" data-with="${V.id}">${ic('plus','sm')} Novo setlist com esta música</button>`;
+  }
+  if(m.name==='scoremeta'){
+    h = head('Título e compositor') + `<div class="stack">
+      <div class="field"><label for="m-title">Título da música</label><input class="input" id="m-title" value="${esc(m.title||'')}" placeholder="Ex.: Prelúdio em Dó"></div>
+      <div class="field"><label for="m-comp">Compositor ou arranjo</label><input class="input" id="m-comp" value="${esc(m.comp||'')}" placeholder="Ex.: Autoral"></div>
+      <button class="btn lime block" data-act="savemeta">Salvar</button></div>`;
+  }
+  if(m.name==='chordinfo'){
+    const sh = chordShape(m.chord);
+    h = head(esc(m.chord)) + `<div class="dbig">${sh ? diagramSVG(sh.fr, 2.2) : '<p class="sub">Ainda não tenho a forma deste acorde.</p>'}</div>
+      ${sh?.simplified ? `<p class="sub" style="text-align:center">Forma simplificada: ${esc(sh.base)}${sh.bass ? `, com o baixo em ${esc(sh.bass)}` : ''}.</p>` : ''}`;
+  }
+  if(m.name==='chordpick'){
+    const songChords = chordsIn(S.pending.text, 0, false), common = ['C','D','E','F','G','A','B','Am','Dm','Em','A7','D7','E7','G7'];
+    const chips = [...new Set([...songChords, ...common])];
+    h = head(m.cur ? 'Trocar acorde' : 'Pôr acorde') + `<div class="stack">
+      <div class="chipwrap">${chips.map(c => `<button class="te-chip ${c===m.cur?'on':''}" data-act="chordset" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+      <div class="field"><label for="m-ch">Ou digite (ex.: F#m7, A7M, E7(9), D/F#)</label><input class="input" id="m-ch" value="${esc(m.cur||'')}" autocapitalize="characters" autocomplete="off" style="font-family:var(--f-mono)"></div>
+      <div class="row">${m.cur ? '<button class="btn ghost" data-act="chordset" data-v="" style="color:var(--danger)">Tirar acorde</button>' : ''}<button class="btn lime" style="flex:1" data-act="chordtyped">Salvar</button></div></div>`;
+  }
+  if(m.name==='folder'){
+    h = head('Mover para pasta') + `<div class="stack">${DB.folders.length?DB.folders.map(f=>{const on=(DB.folderOf[V.id]||[]).includes(f);return `<button class="opt" data-act="tofolder" data-v="${esc(f)}"><span class="oi">${ic(on?'check':'folder')}</span><span><b>${esc(f)}</b><span>${on?'Já está nesta pasta · toque para tirar':'Toque para adicionar'}</span></span></button>`}).join(''):'<p class="sub">Você ainda não criou pastas.</p>'}<p class="sub">A pasta do gênero (${esc(song(V.id).genre)}) é automática.</p></div>`;
+  }
+  modal.innerHTML = `<div class="scrim" data-act="scrim"><div class="modal" role="dialog" aria-modal="true">${h}</div></div>`;
+  const f = modal.querySelector('input,textarea'); if(f && matchMedia('(min-width:768px)').matches) f.focus();
+}
+
+/* ---------- Tinta (caneta, marca-texto, borracha) ---------- */
+let ink, ctx2, drawing = null, hist = {u:[], r:[]}, bandSnap = null;
+function mountInk(){
+  ink = document.getElementById('ink'); if(!ink) return;
+  ctx2 = ink.getContext('2d');
+  sizeInk();
+  ink.onpointerdown = down; ink.onpointermove = move; ink.onpointerup = ink.onpointercancel = up;
+}
+function sizeInk(){
+  const w = document.getElementById('sw'); if(!w || !ink) return;
+  const dpr = Math.min(window.devicePixelRatio||1, 2), W = w.offsetWidth, H = w.offsetHeight;
+  ink.width = W*dpr; ink.height = H*dpr; ink.style.width = W+'px'; ink.style.height = H+'px';
+  ctx2.setTransform(dpr,0,0,dpr,0,0); redraw();
+}
+function drawStroke(s){
+  const fs = V.fs, p = s.pts; if(!p.length) return;
+  ctx2.save(); ctx2.globalAlpha = s.tool==='hl' ? .32 : 1; ctx2.strokeStyle = s.color;
+  ctx2.lineWidth = (s.tool==='hl' ? 1.05 : .14) * fs; ctx2.lineCap = s.tool==='hl'?'butt':'round'; ctx2.lineJoin = 'round';
+  ctx2.beginPath(); ctx2.moveTo(p[0][0]*fs, p[0][1]*fs);
+  if(p.length === 1) ctx2.lineTo(p[0][0]*fs+.5, p[0][1]*fs);
+  for(let i=1;i<p.length-1;i++){ const mx=(p[i][0]+p[i+1][0])/2*fs, my=(p[i][1]+p[i+1][1])/2*fs; ctx2.quadraticCurveTo(p[i][0]*fs,p[i][1]*fs,mx,my); }
+  if(p.length>1) ctx2.lineTo(p[p.length-1][0]*fs, p[p.length-1][1]*fs);
+  ctx2.stroke(); ctx2.restore();
+}
+function redraw(){
+  if(!ctx2) return; ctx2.clearRect(0,0,ink.width,ink.height);
+  if(V.ctx?.band) strokes('band').forEach(drawStroke);
+  strokes('me').forEach(drawStroke);
+  if(drawing && drawing.tool!=='eraser') drawStroke(drawing);
+}
+const pt = e => { const r = ink.getBoundingClientRect(); return [(e.clientX-r.left)/V.fs, (e.clientY-r.top)/V.fs]; };
+function snapshot(){ hist.u.push(strokes(V.layer).slice()); hist.r = []; }
+/* Caneta × dedo: quando o app percebe uma caneta (Apple Pencil), passa a valer "só a caneta desenha":
+   o dedo arrasta a página e a caneta escreve, sem trocar de ferramenta. */
+let panning = null;
+function down(e){
+  if(!V.edit || V.tool==='hand') return;
+  if(e.pointerType==='pen' && !DB.prefs.penOnly){ DB.prefs.penOnly = true; save(); toast('Caneta detectada: agora a caneta escreve e o dedo rola a página'); }
+  e.preventDefault(); try { ink.setPointerCapture(e.pointerId); } catch(err){}
+  if(DB.prefs.penOnly && e.pointerType==='touch'){ panning = {y:e.clientY, x:e.clientX}; return; }
+  snapshot();
+  drawing = {tool:V.tool, color:V.color, pts:[pt(e)]};
+  if(V.tool==='eraser') eraseAt(pt(e)); else redraw();
+}
+function move(e){
+  if(panning){ view.scrollTop -= e.clientY - panning.y; panning.y = e.clientY; return; }
+  if(!drawing) return; e.preventDefault();
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  for(const ev of evs){ const p = pt(ev); if(drawing.tool==='eraser') eraseAt(p); else drawing.pts.push(p); }
+  redraw();
+}
+function up(){
+  panning = null;
+  if(!drawing) return;
+  if(drawing.tool!=='eraser') strokes(V.layer).push(drawing);
+  if(drawing.tool==='eraser' && hist.u.length && hist.u[hist.u.length-1].length===strokes(V.layer).length) hist.u.pop();
+  drawing = null; save(); redraw(); updateUndoUI();
+}
+/* Desfazer/refazer só aparecem quando há o que desfazer/refazer */
+function updateUndoUI(){
+  const u = document.getElementById('b-undo'), r = document.getElementById('b-redo'), h = undoStack();
+  if(u) u.hidden = !h.u.length; if(r) r.hidden = !h.r.length;
+}
+/* Muda a nota selecionada (com desfazer) ou, sem seleção, a figura da próxima nota */
+function editNote(onNote, onNext){
+  const sc = song(V.id).score;
+  if(V.sel != null && sc.notes[V.sel]){ pushNotes(); onNote(sc.notes[V.sel]); save(); }
+  else if(onNext) onNext();
+  rerenderViewer();
+}
+function eraseAt([x,y]){
+  const arr = strokes(V.layer), r = .7;
+  for(let i=arr.length-1;i>=0;i--) if(arr[i].pts.some(([a,b]) => (a-x)**2+(b-y)**2 < r*r)) arr.splice(i,1);
+}
+
+/* ---------- Rolagem automática e tela acesa ---------- */
+/* Rolagem pela duração da música: a página inteira passa no tempo que a música dura. Começa com contagem 3-2-1. */
+let raf = null, lastT = 0, acc = 0, cdT = null;
+function tick(t){
+  if(!V?.playing) return;
+  const rate = Math.max(4, (view.scrollHeight - view.clientHeight) / songDur(song(V.id))); // px por segundo
+  if(lastT){ acc += (t-lastT)/1000 * rate; const n = Math.floor(acc); if(n){ view.scrollTop += n; acc -= n; } }
+  lastT = t;
+  if(view.scrollTop + view.clientHeight >= view.scrollHeight - 2){ V.playing = false; rerenderViewer(); return; }
+  raf = requestAnimationFrame(tick);
+}
+function stopScroll(){
+  if(V?.splaying) stopScore();
+  if(V){ V.playing = false; V.counting = false; }
+  cancelAnimationFrame(raf); lastT = 0; clearInterval(cdT); document.querySelectorAll('.count').forEach(n => n.remove());
+}
+function togglePlay(){
+  if(V.playing || V.counting){ stopScroll(); rerenderViewer(); return; }
+  V.pop = false; V.counting = true; rerenderViewer();
+  let n = 3; const el = document.createElement('div'); el.className = 'count'; el.setAttribute('role','status'); el.textContent = n; document.body.appendChild(el);
+  cdT = setInterval(() => { n--; if(n > 0){ el.textContent = n; return; }
+    clearInterval(cdT); el.remove(); if(!V?.counting) return; V.counting = false; V.playing = true; lastT = 0; acc = 0; raf = requestAnimationFrame(tick); rerenderViewer(); }, 800);
+}
+/* Cabe a música inteira na tela: procura o maior tamanho de letra em que ela não precisa rolar */
+function fitToScreen(){
+  V.pop = false; const head = () => document.querySelector('.vhead')?.offsetHeight || 0;
+  const bar = document.querySelector('.stagebar')?.offsetHeight || 0;
+  let lo = 11, hi = 40, best = 0;
+  while(lo <= hi){ const mid = (lo + hi) >> 1; V.fs = mid; render();
+    const avail = view.clientHeight - head() - bar - 30, h = document.getElementById('sw').offsetHeight + (document.querySelector('.dgrid')?.offsetHeight || 0);
+    if(h <= avail){ best = mid; lo = mid + 1; } else hi = mid - 1; }
+  V.fs = best || 11; render();
+  toast(best ? `A música inteira coube na tela (letra ${best}px)` : wide() && DB.prefs.cols!==2 ? 'Não coube inteira: tente 2 colunas' : 'Não coube inteira nem com a letra mínima: use a rolagem');
+}
+let lock = null;
+async function wake(on){
+  try{ if(on && !lock && navigator.wakeLock){ lock = await navigator.wakeLock.request('screen'); }
+       if(!on && lock){ await lock.release(); lock = null; } }catch(e){ lock = null; }
+}
+function rerenderViewer(){ const y = view.scrollTop; render(); view.scrollTop = y; }
+
+/* ---------- Toast ---------- */
+let tt; const toastEl = document.getElementById('toast');
+function toast(msg){ toastEl.innerHTML = ic('check','sm') + `<span>${esc(msg)}</span>`; toastEl.classList.add('show'); clearTimeout(tt); tt = setTimeout(()=>toastEl.classList.remove('show'), 2800); }
+
+/* ---------- Ações ---------- */
+const A = {
+  tab: el => tab(el.dataset.v),
+  back, create: () => openModal({name:'create', step:'home'}),
+  mclose: closeModal, scrim: (el, e) => { if(e.target === el) closeModal(); },
+  mstep: el => { if(S.modal.step==='linkfail' && el.dataset.v==='paste') S.modal.blank = true; S.modal.step = el.dataset.v; drawModal(); },
+  pickmode: el => { DB.mode = el.dataset.v; save(); S.choosing = false; tab('lib'); },
+  setmode: el => { const v = el.dataset.v; if(DB.mode===v) return; DB.mode = v; save(); render();
+    /* sem a aba Recentes no palco, o "Ver todas" da biblioteca continua levando à lista de recentes */
+    toast(v==='palco' ? 'Modo palco: Bandas e Palco na barra' : 'Modo estudo: Recentes e Minhas na barra'); },
+  filter: el => openModal({name:'filter', kind:el.dataset.v}),
+  setf: el => { const k = el.dataset.k, v = el.dataset.v; S.f[k] = k==='sort' ? v : (v || null); closeModal(); render(); },
+  clearf: () => { S.f = {...S.f, folder:null, genre:null, key:null}; render(); },
+  clearrecent: () => { DB.recent = []; save(); render(); toast('Histórico de recentes limpo'); },
+  pop: () => { V.pop = !V.pop; rerenderViewer(); },
+  popclose: () => { V.pop = false; rerenderViewer(); },
+  newfolder: () => openModal({name:'input', title:'Nova pasta', label:'Nome da pasta', ph:'Ex.: Repertório do casamento', cta:'Criar pasta', kind:'folder'}),
+  /* No modo palco, toda música abre com cara de palco (letra grande, tela acesa, trava), mesmo fora do setlist */
+  open: el => { openSong(el.dataset.id, DB.mode==='palco' ? {stage:true, loose:true} : undefined); go('song'); },
+  openbandsong: el => { openSong(el.dataset.id, {band:el.dataset.b}); go('song'); },
+  st: el => { V.st += +el.dataset.v; hist = {u:[],r:[]}; rerenderViewer(); },
+  gost: el => { V.st = +el.dataset.v; hist = {u:[],r:[]}; rerenderViewer(); toast('Tom trocado: suas anotações deste tom apareceram'); },
+  capo: el => { V.capo = Math.max(0, Math.min(9, V.capo + +el.dataset.v)); rerenderViewer(); },
+  fs: el => { V.fs = Math.max(11, Math.min(32, V.fs + (+el.dataset.v)*2)); rerenderViewer(); },
+  play: () => togglePlay(),
+  dur: el => { const s = song(V.id); s.dur = Math.max(60, Math.min(600, songDur(s) + 15 * +el.dataset.v)); save(); rerenderViewer(); },
+  fit: () => fitToScreen(),
+  cols: el => { DB.prefs.cols = +el.dataset.v; save(); rerenderViewer(); },
+  diag: () => { DB.prefs.diag = !DB.prefs.diag; save(); rerenderViewer(); },
+  chordinfo: el => { if(V?.edit) return; openModal({name:'chordinfo', chord:el.dataset.v}); },
+  lock: () => { V.locked = true; V.pop = false; rerenderViewer(); toast('Tela travada: toques não fazem nada. O pedal continua funcionando.'); },
+  lockhint: (el, e) => { if(e.target.closest('#lockpill')) return; const p = document.getElementById('lockpill'); p?.classList.remove('nudge'); void p?.offsetWidth; p?.classList.add('nudge'); },
+  tosl: () => { V.pop = false; rerenderViewer(); openModal({name:'tosl'}); },
+  toslt: el => { const sl = DB.setlists.find(x => x.id === el.dataset.id), i = sl.items.findIndex(x => x.song === V.id);
+    if(i < 0){ sl.items.push({song:V.id, st:V.st}); toast(`Adicionada a ${sl.name}, no tom ${keyName(song(V.id).key, V.st)}`); } else { sl.items.splice(i, 1); toast('Tirada de ' + sl.name); }
+    save(); drawModal(); },
+  newsl: el => openModal({name:'input', title: el.dataset.b ? 'Novo setlist da banda' : 'Novo setlist', label:'Nome do show ou do ensaio', ph:'Ex.: Culto de domingo, Casamento Ana e Leo', cta:'Criar setlist', kind:'setlist', band: el.dataset.b || null, with: el.dataset.with || null}),
+  sledit: () => { S.slEdit = !S.slEdit; render(); },
+  sladd: el => openModal({name:'pick', sl: el.dataset.id}),
+  pickt: el => { const sl = DB.setlists.find(x => x.id === S.modal.sl), i = sl.items.findIndex(x => x.song === el.dataset.id);
+    if(i < 0) sl.items.push({song:el.dataset.id, st:0}); else sl.items.splice(i, 1); save(); drawModal(); render(); },
+  slmv: el => { const sl = DB.setlists.find(x => x.id === cur().id), i = +el.dataset.i, j = i + +el.dataset.v; if(j < 0 || j >= sl.items.length) return;
+    [sl.items[i], sl.items[j]] = [sl.items[j], sl.items[i]]; save(); render(); },
+  slst: el => { const sl = DB.setlists.find(x => x.id === cur().id); sl.items[+el.dataset.i].st += +el.dataset.v; save(); render(); },
+  slrm: el => { const sl = DB.setlists.find(x => x.id === cur().id), it = sl.items.splice(+el.dataset.i, 1)[0]; save(); render(); toast(song(it.song).title + ' saiu do setlist'); },
+  sldel: el => { if(!el.dataset.sure){ el.dataset.sure = '1'; el.textContent = 'Toque de novo para apagar (as músicas continuam na biblioteca)'; return; } DB.setlists = DB.setlists.filter(x => x.id !== el.dataset.id); S.slEdit = false; save(); back(); toast('Setlist apagado'); },
+  setacc: el => { DB.prefs.acc = el.dataset.v; save(); render(); },
+  penonly: () => { DB.prefs.penOnly = !DB.prefs.penOnly; save(); render(); },
+  clippaste: async el => { const f = document.getElementById(el.dataset.v);
+    try { const t = await navigator.clipboard.readText(); if(!t) throw 0; f.value = t; f.focus(); toast('Colado'); }
+    catch(e){ f.focus(); toast('O navegador não deixou colar daqui: toque e segure no campo e escolha Colar'); } },
+  edmode: el => { readMeta(); S.pending.mode = el.dataset.v; render(); },
+  tapch: el => { const d = el.dataset, ci = d.ci === '' ? null : +d.ci, li = d.li === '' ? null : +d.li, c = +d.c;
+    const L = S.pending.text.split('\n'), curTok = ci !== null ? (L[ci].slice(c).match(/^\S+/)?.[0] || '') : '';
+    const atStart = ci !== null && (c === 0 || L[ci][c-1] === ' ' || L[ci][c-1] === undefined);
+    openModal({name:'chordpick', ci, li, c, cur: atStart ? curTok : ''}); },
+  chordset: el => { const m = S.modal; readMeta(); setChordAt(S.pending, m.ci, m.li, m.c, el.dataset.v); closeModal(); render(); },
+  chordtyped: () => { const v = document.getElementById('m-ch').value.trim().replace(/\s+/g,'');
+    if(v && !isChord(v)){ toast('Não reconheci “' + v + '” como acorde. Ex.: G, Am, F#m7, A7M, D/F#'); return; }
+    const m = S.modal; setChordAt(S.pending, m.ci, m.li, m.c, v); closeModal(); render(); },
+  movefolder: () => { V.pop = false; rerenderViewer(); openModal({name:'folder'}); },
+  tofolder: el => { const f = el.dataset.v, a = DB.folderOf[V.id] = DB.folderOf[V.id]||[]; const i = a.indexOf(f); if(i<0){a.push(f); toast('Adicionada à pasta '+f);} else {a.splice(i,1); toast('Removida da pasta '+f);} save(); closeModal(); },
+  edit: () => {
+    V.pop = false;
+    if(V.ctx?.band){ rerenderViewer(); const c = cur(); const it = c.name==='perform' ? DB.setlists.find(x=>x.id===c.sl).items[c.i] : null; openModal({name:'choice', item:it}); }
+    else { V.edit = true; V.layer = 'me'; hist = {u:[],r:[]}; if(song(V.id).score){ V.tool = 'note'; V.sel = null; } rerenderViewer(); }
+  },
+  startedit: el => { closeModal(); V.edit = true; V.layer = el.dataset.v; V.tool = song(V.id).score ? 'note' : 'pen'; hist = {u:[],r:[]}; if(V.layer==='band') bandSnap = strokes('band').slice(); stopScroll(); rerenderViewer(); },
+  tool: el => { V.tool = el.dataset.v; rerenderViewer(); },
+  color: el => { V.color = el.dataset.v; if(V.tool==='eraser'||V.tool==='hand') V.tool = 'pen'; rerenderViewer(); },
+  undo: () => { if(isNoteUndo()){ const h = undoStack(), sc = song(V.id).score; if(!h.u.length) return; h.r.push(JSON.stringify(sc.notes)); sc.notes = JSON.parse(h.u.pop()); V.sel = null; save(); rerenderViewer(); return; }
+    if(!hist.u.length) return; hist.r.push(strokes(V.layer).slice()); DB.ann[annKey(V.layer,V.st)] = hist.u.pop(); save(); redraw(); updateUndoUI(); },
+  redo: () => { if(isNoteUndo()){ const h = undoStack(), sc = song(V.id).score; if(!h.r.length) return; h.u.push(JSON.stringify(sc.notes)); sc.notes = JSON.parse(h.r.pop()); V.sel = null; save(); rerenderViewer(); return; }
+    if(!hist.r.length) return; hist.u.push(strokes(V.layer).slice()); DB.ann[annKey(V.layer,V.st)] = hist.r.pop(); save(); redraw(); updateUndoUI(); },
+  /* Partitura: figura, pausa, ponto, acidente (valem para a próxima nota, ou para a nota selecionada) */
+  nd: el => editNote(n => { n.d = el.dataset.v; }, () => { V.nd = el.dataset.v; }),
+  nrest: () => editNote(n => { n.rest = !n.rest; if(n.rest) n.acc = null; }, () => { V.nrest = !V.nrest; }),
+  ndot: () => editNote(n => { n.dot = !n.dot; }, () => { V.ndot = !V.ndot; }),
+  nacc: el => editNote(n => { if(!n.rest) n.acc = n.acc === el.dataset.v ? null : el.dataset.v; }, () => { V.nacc = V.nacc === el.dataset.v ? null : el.dataset.v; }),
+  nmove: el => editNote(n => { n.st = Math.max(-6, Math.min(14, n.st + +el.dataset.v)); previewNote(n, song(V.id).score); }),
+  ndel: () => { const sc = song(V.id).score; pushNotes(); sc.notes.splice(V.sel, 1); V.sel = null; save(); rerenderViewer(); },
+  sclef: el => { song(V.id).score.clef = el.dataset.v; save(); rerenderViewer(); },
+  sfifths: el => { const s = song(V.id), sc = s.score; sc.fifths = Math.max(-7, Math.min(7, sc.fifths + +el.dataset.v)); s.key = scoreKey(sc); save(); rerenderViewer(); },
+  stime: el => { song(V.id).score.time = el.dataset.v; save(); rerenderViewer(); },
+  stempo: el => { const sc = song(V.id).score; sc.tempo = Math.max(30, Math.min(240, sc.tempo + 5 * +el.dataset.v)); save(); rerenderViewer(); },
+  splay: () => { if(V.splaying){ stopScore(); rerenderViewer(); } else playScore(); },
+  scoremeta: () => { const s = song(V.id); openModal({name:'scoremeta', title: s.title === 'Sem título' ? '' : s.title, comp: s.artist}); },
+  savemeta: () => { const s = song(V.id); s.title = document.getElementById('m-title').value.trim() || 'Sem título'; s.artist = document.getElementById('m-comp').value.trim(); save(); closeModal(); rerenderViewer(); },
+  done: () => { const wasBand = V.layer==='band'; V.edit = false; V.layer = 'me'; bandSnap = null; save(); rerenderViewer();
+    toast(wasBand ? 'Versão da banda salva. Atualizou no tablet de todos (simulado).' : 'Anotações salvas só pra você'); },
+  discard: () => { DB.ann[annKey('band',V.st)] = bandSnap || []; bandSnap = null; V.edit = false; V.layer = 'me'; save(); rerenderViewer(); toast('Alterações descartadas. A banda continua vendo a versão anterior.'); },
+  edittext: () => { const s = song(V.id); S.pending = {editId:s.id, title:s.title, artist:s.artist, key:s.key, genre:s.genre, fmt:s.fmt, text:cleanText(s.text)}; V.edit = false; go('editor'); },
+  readlink: async () => {
+    const raw = document.getElementById('m-url').value.trim(); let url;
+    try { url = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw); if(!raw || !url.hostname.includes('.')) throw 0; }
+    catch(e){ toast('Cole o endereço completo da cifra'); return; }
+    const m = S.modal; Object.assign(m, {step:'loading', url:url.href, host:url.hostname.replace(/^www\./,'')}); drawModal();
+    let why = 'blocked', got = null;
+    try {
+      const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 9000);
+      const res = await fetch(url.href, {signal:ctrl.signal, credentials:'omit'}); clearTimeout(tm);
+      if(res.ok){ got = extractCifra(await res.text()); if(!got) why = 'nocifra'; }
+    } catch(e){ /* bloqueado pelo site (CORS), pela página ou sem rede */ }
+    if(S.modal !== m) return; // a pessoa fechou ou voltou enquanto lia
+    if(!got){ m.step = 'linkfail'; m.why = why; drawModal(); return; }
+    closeModal(); S.pending = {...got, key:detectKey(got.text), fmt:got.text.split('\n').some(isTabLine)?'Cifra + tab':'Cifra', source:'link', url:url.href}; go('preview');
+  },
+  linkdemo: () => { const url = S.modal.url; closeModal(); S.pending = {...LINK_SAMPLE, key:detectKey(LINK_SAMPLE.text), fmt:'Cifra', source:'link', demo:true, url}; go('preview'); },
+  parsepaste: () => { const t = cleanText(document.getElementById('m-text').value); if(!t.trim()){ toast('Cole uma cifra antes de continuar'); return; }
+    closeModal(); S.pending = {title: t===PASTE_SAMPLE?'Noite de Junho':'Sem título', artist: t===PASTE_SAMPLE?'Artista Exemplo':'', genre: t===PASTE_SAMPLE?'Forró':'', key:detectKey(t), text:t, fmt: t.split('\n').some(isTabLine)?'Cifra + tab':'Cifra', source:'paste'}; go('preview'); },
+  savepending: () => { readMeta(); const id = addSong(S.pending); toast('Salva na biblioteca'); S.tab='lib'; S.stack=[{name:'lib'}]; openSong(id); go('song'); },
+  zero: el => {
+    const f = el.dataset.v; closeModal();
+    const tpl = {'Cifra':'[Primeira Parte]\nC           G\nEscreva a letra aqui\nAm          F\ncom os acordes na linha de cima\n',
+      'Cifra + tab':'[Intro]\ne|-----------------|\nB|-----------------|\nG|-----------------|\nD|-----------------|\nA|-----------------|\nE|-----------------|\n\n[Primeira Parte]\nC           G\nEscreva a letra aqui\n',
+      'Tablatura':'[Riff]\ne|-----------------|\nB|-----------------|\nG|-----------------|\nD|-----------------|\nA|-----------------|\nE|-----------------|\n'}[f];
+    if(f==='Partitura'){ const id = addSong({title:'Sem título', artist:'', genre:'Partituras', key:'C', fmt:'Partitura', text:'', score:newScore()});
+      openSong(id); V.edit = true; V.tool = 'note'; S.tab='lib'; S.stack=[{name:'lib'}]; go('song');
+      toast('Toque na pauta para pôr a nota. Escolha a figura na barra de cima.'); return; }
+    if(f==='Folha em branco'){ const id = addSong({title:'Folha em branco', artist:'Autoral', genre:'Rascunhos', key:'C', fmt:'Folha em branco', text:''}); openSong(id); V.edit = true; S.tab='lib'; S.stack=[{name:'lib'}]; go('song'); return; }
+    S.pending = {title:'', artist:'', key:'C', genre:'', fmt:f, text:tpl}; go('editor');
+  },
+  edprev: el => { readMeta(); S.pending.showPrev = el.dataset.v==='1'; render(); },
+  saveeditor: () => { readMeta(); const p = S.pending;
+    if(p.editId){ Object.assign(song(p.editId), {title:p.title, artist:p.artist, key:p.key, genre:p.genre, text:p.text, edited:true}); save(); back(); toast('Texto da cifra salvo'); return; }
+    const id = addSong(p); toast('Salva na biblioteca'); S.tab='lib'; S.stack=[{name:'lib'}]; openSong(id); go('song'); },
+  openband: el => { S.bandTab = 'rep'; go('band', {id:el.dataset.id}); },
+  bandtab: el => { S.bandTab = el.dataset.v; render(); },
+  approve: el => { const b = band(el.dataset.b), p = b.pending.splice(+el.dataset.i,1)[0]; b.members.push({n:p.n, r:'membro', i:p.i}); save(); render(); toast(p.n+' entrou na banda'); },
+  deny: el => { const b = band(el.dataset.b), p = b.pending.splice(+el.dataset.i,1)[0]; save(); render(); toast('Pedido de '+p.n+' recusado'); },
+  role: el => { const m = band(el.dataset.b).members[+el.dataset.i]; m.r = m.r==='editor'?'membro':'editor'; save(); render(); toast(m.r==='editor'? m.n+' agora pode editar a versão da banda' : m.n+' edita só a própria cifra'); },
+  copycode: el => { const v = el.dataset.v; navigator.clipboard?.writeText(v).then(()=>toast('Código '+v+' copiado'), ()=>toast('Código da banda: '+v)); },
+  /* Conta (simulada) */
+  authstep: el => { S.auth = {step: el.dataset.v, email: S.auth.email}; render(); },
+  sso: el => { const m = el.dataset.v;
+    if(sb){ toast(`Entrar com ${METHOD_NAME[m].replace('Conta ','')} chega em breve. Por enquanto, use o seu e-mail.`); document.getElementById('a-email')?.focus(); return; }
+    DB.user = {method:m, email:'', name:'', inst:''}; save(); S.auth = {step:'onboard'}; render();
+    toast(`Simulado: entrou com ${METHOD_NAME[m]}`); },
+  sendcode: async () => { const e = document.getElementById('a-email').value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)){ S.auth = {...S.auth, email:e, err:'Confira o e-mail: ele precisa ter @ e um domínio, como voce@email.com.'}; render(); document.getElementById('a-email')?.focus(); return; }
+    S.auth = {step:'login', email:e, busy:true}; render();
+    if(sb){
+      const {error} = await sb.auth.signInWithOtp({email:e, options:{shouldCreateUser:true}});
+      if(error){ S.auth = {step:'login', email:e, err: authErr(error)}; render(); return; }
+      S.auth = {step:'code', email:e}; render(); document.getElementById('a-code')?.focus(); return;
+    }
+    setTimeout(() => { S.auth = {step:'code', email:e}; render(); document.getElementById('a-code')?.focus(); }, 700); },
+  resend: async () => { S.auth.err = ''; render();
+    if(sb){ const {error} = await sb.auth.signInWithOtp({email:S.auth.email}); if(error){ S.auth.err = authErr(error); render(); } else toast('Código reenviado para ' + S.auth.email); return; }
+    toast('Simulado: código reenviado para ' + S.auth.email); },
+  verifycode: async () => { const v = document.getElementById('a-code').value.replace(/\D/g,'');
+    if(v.length !== OTP_LEN){ S.auth.err = `O código tem ${OTP_LEN} números.`; render(); document.getElementById('a-code')?.focus(); return; }
+    S.auth.busy = true; render();
+    if(sb){
+      const {data, error} = await sb.auth.verifyOtp({email:S.auth.email, token:v, type:'email'});
+      if(error){ S.auth = {...S.auth, busy:false, err: authErr(error)}; render(); document.getElementById('a-code')?.focus(); return; }
+      try { await cloudLoad(data.user); } catch(e){ S.auth = {...S.auth, busy:false, err:'Entrou, mas não consegui buscar suas cifras. Confira a internet e tente de novo.'}; render(); return; }
+      S.auth = {step:'login'}; S.choosing = true; render(); document.getElementById('a-name')?.focus(); return;
+    }
+    setTimeout(() => { DB.user = {method:'email', email:S.auth.email, name:'', inst:''}; save(); S.auth = {step:'onboard'}; render(); document.getElementById('a-name')?.focus(); }, 600); },
+  pickinst: el => { S.auth.name = document.getElementById('a-name').value; S.auth.insts = toggleIn(S.auth.insts || [], el.dataset.v); render(); },
+  finishonboard: () => { const n = document.getElementById('a-name').value.trim();
+    if(!n){ S.auth = {...S.auth, err:'Diga como te chamam para continuar.'}; render(); document.getElementById('a-name')?.focus(); return; }
+    DB.user.name = n; DB.user.insts = S.auth.insts || []; save(); S.auth = {step:'login'}; S.choosing = true; render(); },
+  guest: () => { DB.user = {guest:true, name:'Visitante', inst:''}; save(); S.choosing = true; render(); },
+  logout: async el => { const up = el.dataset.v === 'upgrade';
+    if(sb && cloudUser){ // conta de verdade: as cifras ficam na nuvem; o aparelho volta ao começo
+      clearTimeout(pushT); try { await sb.from('user_data').upsert({user_id: cloudUser.id, data: DB, updated_at: new Date().toISOString()}); } catch(e){}
+      await sb.auth.signOut(); cloudUser = null; DB = normalizeDB(SEED()); try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch(e){}
+    } else { DB.user = null; save(); }
+    S.auth = {step:'login'}; S.choosing = true; S.stack = [{name:'lib'}]; S.tab = 'lib'; stopScroll(); render();
+    if(!up) toast(sb ? 'Você saiu. Suas cifras ficam salvas na sua conta.' : 'Você saiu da conta'); },
+  setinst: el => { DB.user.insts = toggleIn(DB.user.insts || [], el.dataset.v); save(); render(); },
+  joinband: () => DB.user?.guest ? toast('Para entrar numa banda, crie sua conta no Perfil') : openModal({name:'input', title:'Entrar numa banda', label:'Código de convite', ph:'Ex.: K7Q-42M', cta:'Pedir para entrar', kind:'join'}),
+  newband: () => DB.user?.guest ? toast('Para criar uma banda, crie sua conta no Perfil') : openModal({name:'input', title:'Criar banda', label:'Nome da banda', ph:'Ex.: Ministério Aurora', cta:'Criar', kind:'band'}),
+  minput: () => {
+    const v = document.getElementById('m-in').value.trim(), k = S.modal.kind; if(!v){ toast('Preencha o campo para continuar'); return; }
+    if(k==='folder'){ if(!DB.folders.includes(v)) DB.folders.push(v); S.f.folder = v; }
+    if(k==='setlist'){ const m = S.modal, id = 'sl' + Date.now().toString(36);
+      DB.setlists.unshift({id, band:m.band, name:v, date:today(), items: m.with ? [{song:m.with, st:V?.st||0}] : []});
+      save(); closeModal(); S.slEdit = true; go('setlist', {id}); toast('Setlist criado' + (m.with ? ' com a música' : '') + '. Agora adicione as músicas na ordem do show.'); return; }
+    if(k==='join'){ DB.bands.push({id:'j'+Date.now(), name:'Banda do código '+v.toUpperCase(), waiting:true, members:[], pending:[], songs:[]}); toast('Pedido enviado ao líder da banda'); }
+    if(k==='band'){ const code = Math.random().toString(36).slice(2,5).toUpperCase()+'-'+Math.random().toString(36).slice(2,5).toUpperCase();
+      DB.bands.push({id:'b'+Date.now(), name:v, code, role:'lider', members:[{n:'Você',r:'lider',i:'Guitarra'}], pending:[], songs:[]}); toast('Banda criada. Código de convite: '+code); }
+    save(); closeModal(); render();
+  },
+  opensl: el => go('setlist', {id:el.dataset.id}),
+  startstage: el => { const sl = DB.setlists.find(x=>x.id===el.dataset.id); openSong(sl.items[0].song, {stage:true, band:sl.band, st:sl.items[0].st}); go('perform', {sl:sl.id, i:0}); },
+  stagego: el => stageGo(+el.dataset.v),
+  exitstage: () => { stopScroll(); S.stack.pop(); render(); },
+  reset: () => { const mode = DB.mode, user = DB.user, prefs = DB.prefs; DB = SEED(); DB.mode = mode; DB.user = user; DB.prefs = prefs; save(); toast('Dados de exemplo restaurados'); tab('lib'); }
+};
+/* Lê a cifra de uma página: pega o <pre> com mais linhas de acorde (é assim que a maioria dos sites publica) */
+function extractCifra(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const best = [...doc.querySelectorAll('pre')].map(p => p.textContent.replace(/\r/g,''))
+    .map(t => ({t, n:t.split('\n').filter(isChordLine).length})).filter(x => x.n >= 2).sort((a,b) => b.n - a.n)[0];
+  if(!best) return null;
+  const meta = n => doc.querySelector(`meta[property="${n}"]`)?.content?.trim();
+  const h1 = doc.querySelector('h1')?.textContent.trim(), h2 = doc.querySelector('h2')?.textContent.trim();
+  const title = h1 || (meta('og:title') || doc.title || 'Sem título').split(/[-|–]/)[0].trim();
+  return {title, artist: h2 && h2.length < 60 ? h2 : '', genre:'', text: cleanText(best.t).replace(/^\n+|\s+$/g,'')};
+}
+function stageGo(d){
+  const c = cur(); if(c.name!=='perform' || V.edit) return;
+  const sl = DB.setlists.find(x=>x.id===c.sl), i = c.i + d; if(i<0 || i>=sl.items.length) return;
+  stopScroll(); c.i = i; const fs = V.fs, lk = V.locked; openSong(sl.items[i].song, {stage:true, band:sl.band, st:sl.items[i].st}); V.fs = fs; V.locked = lk; render();
+}
+/* Destravar a tela: segurar o botão por 0,7 s (um esbarrão não destrava) */
+let holdT = null;
+document.addEventListener('pointerdown', e => { const p = e.target.closest('#lockpill'); if(!p) return;
+  p.classList.add('hold'); holdT = setTimeout(() => { V.locked = false; rerenderViewer(); toast('Tela destravada'); }, 700); });
+['pointerup','pointercancel','pointerleave'].forEach(t => document.addEventListener(t, e => {
+  if(t==='pointerleave' && e.target.id!=='lockpill') return;
+  clearTimeout(holdT); document.getElementById('lockpill')?.classList.remove('hold'); }, true));
+document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if(el && A[el.dataset.act]) A[el.dataset.act](el, e); });
+/* Conta: Enter envia; o código entra sozinho quando chegam os 6 números (inclusive pelo preenchimento automático) */
+document.addEventListener('keydown', e => { if(e.key !== 'Enter') return;
+  const act = {'a-email':'sendcode', 'a-code':'verifycode', 'a-name':'finishonboard'}[e.target.id]; if(act){ e.preventDefault(); A[act](); } });
+document.addEventListener('input', e => { if(e.target.id==='a-code' && e.target.value.replace(/\D/g,'').length === OTP_LEN && !S.auth.busy) A.verifycode(); });
+document.addEventListener('input', e => { if(e.target.id==='q'){ S.q = e.target.value; document.getElementById('libbody').innerHTML = libBody(); } });
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && S.modal) closeModal();
+  else if(e.key==='Escape' && V?.pop && /song|perform/.test(cur().name)){ V.pop = false; rerenderViewer(); }
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if(cur().name==='perform' && !S.modal && !typing){
+    if(['ArrowRight','PageDown'].includes(e.key)){ e.preventDefault(); stageGo(1); }
+    if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); stageGo(-1); }
+  }
+  /* Pedal/teclado na cifra: ↓ ↑ viram a "página", Espaço inicia ou pausa a rolagem */
+  if(/song|perform/.test(cur().name) && !S.choosing && !S.modal && !typing && V && !V.edit){
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){ e.preventDefault(); view.scrollBy({top:(e.key==='ArrowDown'?1:-1) * view.clientHeight * .8, behavior:'smooth'}); }
+    if(e.key===' '){ e.preventDefault(); togglePlay(); }
+  }
+});
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if(V && song(V.id)?.score && /song|perform/.test(cur().name)) rerenderViewer(); else sizeInk(); }, 120); });
+document.fonts?.ready.then(() => sizeInk());
+/* Abertura: com a nuvem ligada, confere a sessão salva e busca as cifras da conta.
+   Sem internet no ensaio, abre com a cópia do aparelho e envia as mudanças quando a conexão voltar. */
+(async () => {
+  if(sb){
+    S.booting = true; render();
+    try {
+      const {data:{session}} = await sb.auth.getSession();
+      if(session?.user){
+        try { await cloudLoad(session.user); }
+        catch(e){ cloudUser = session.user; sync = {state:'error', at:Date.now(), msg:'sem internet'}; }
+      } else if(DB.user && !DB.user.guest){ DB.user = null; } // sessão vencida: pede o e-mail de novo
+    } catch(e){}
+    S.booting = false;
+  }
+  render();
+})();
+</script>

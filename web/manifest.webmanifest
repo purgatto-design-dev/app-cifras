@@ -1,0 +1,9 @@
+{
+  "name": "Cifras (teste)",
+  "short_name": "Cifras",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0E0B",
+  "theme_color": "#0D0E0B"
+}
