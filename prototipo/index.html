@@ -2,19 +2,22 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Noto+Music&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=JetBrains+Mono:wght@400;700&family=Noto+Music&display=swap">
 <style>
 /* Layout: app de uma tela. Celular = conteúdo + barra inferior; tablet/desktop = trilho lateral + conteúdo.
-   Tema único escuro por escolha (palco). Cifra em fonte mono para alinhar acorde sobre letra. */
+   Visual Octave (2026-11-12): preto-esverdeado com brilhos de verde, cartões oliva, limão do logo,
+   Funnel Display na interface. Cifra continua em fonte mono para alinhar o acorde sobre a sílaba. */
 :root{
   color-scheme:dark;
-  --bg:#0D0E0B; --surface:#161813; --surface-2:#1F221B; --line:#2C3026;
-  --text:#F7F8F2; --muted:#C0C2B8; --dim:#8A8D82;
-  --lime:#D5FF40; --lime-ink:#12150A; --lime-soft:rgba(213,255,64,.12);
+  --bg:#070A06; --surface:#12170F; --surface-2:#1A2116; --line:rgba(214,240,180,.10);
+  --text:#F3F6EC; --muted:#B8C0AC; --dim:#7D8772;
+  --lime:#C6EF4A; --lime-ink:#0F1408; --lime-soft:rgba(198,239,74,.12);
+  --lime-grad:linear-gradient(180deg,#DDF77A 0%,#C1EC46 45%,#A3D12A 100%);
+  --card-grad:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
   --danger:#FF7A66; --info:#7FD8FF;
-  --f-ui:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-ui:'Funnel Display',system-ui,-apple-system,'Segoe UI',sans-serif;
   --f-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
-  --r-sm:10px; --r:16px; --r-lg:22px;
+  --r-sm:12px; --r:20px; --r-lg:26px;
 }
 html{box-sizing:border-box;height:100%;background:var(--bg)}
 *,*::before,*::after{box-sizing:inherit}
@@ -333,6 +336,99 @@ button.card:hover{border-color:var(--line)}
 .toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translateX(-50%) translateY(-20px);opacity:0;z-index:60;background:var(--text);color:var(--bg);font-weight:600;font-size:13px;padding:12px 16px;border-radius:14px;max-width:calc(100% - 32px);transition:all .2s;pointer-events:none;display:flex;gap:8px;align-items:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ================= Visual Octave =================
+   Referência do Rafa: fundo preto-esverdeado com brilhos verdes, cartões oliva com borda fina,
+   limão do logo em degradê nos botões principais, pílulas e barra flutuante. Funnel Display na interface. */
+html,body{background:#070A06}
+body{background:
+  radial-gradient(900px 520px at 0% -8%, rgba(150,200,40,.20), transparent 62%),
+  radial-gradient(800px 640px at 105% 108%, rgba(14,96,62,.30), transparent 62%),
+  radial-gradient(600px 420px at 100% 0%, rgba(60,110,30,.12), transparent 60%),
+  #070A06;
+  background-attachment:fixed;font-size:15px;letter-spacing:.005em}
+h1{font-weight:600;letter-spacing:-.025em;font-size:30px;line-height:1.08}
+@media (min-width:768px){h1{font-size:36px}}
+h2{font-weight:600;letter-spacing:-.015em}
+h1 em,.hl{font-style:normal;color:var(--lime)}
+.label{letter-spacing:.1em;font-weight:500}
+.sub{font-size:14px}
+
+/* Marca */
+.brand{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.01em;color:var(--text)}
+.logo{width:34px;height:34px;border-radius:10px;flex:none;display:block;box-shadow:0 6px 18px rgba(198,239,74,.25)}
+.nav-brand{color:var(--text);letter-spacing:-.01em;font-size:13px;font-weight:600;flex-direction:column;align-items:center;gap:6px;text-transform:none}
+.nav-brand .logo{width:40px;height:40px;border-radius:12px}
+@media (min-width:768px){.nav-brand{display:flex!important;margin-bottom:14px;order:-2}}
+
+/* Barra de navegação: pílula flutuante no celular, painel arredondado no tablet/desktop */
+.nav{background:rgba(16,21,13,.82);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid var(--line);
+  border-radius:999px;margin:0 max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
+  padding:6px 8px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.nav-b{border-radius:999px;min-width:56px;padding:0 6px;font-weight:500}
+.nav-b.on{color:var(--lime);background:rgba(198,239,74,.10)}
+.nav-plus{width:58px;height:58px;border-radius:50%;background:var(--lime-grad);margin-top:-26px;
+  box-shadow:0 0 0 6px rgba(198,239,74,.10),0 12px 32px rgba(198,239,74,.38),inset 0 1px 0 rgba(255,255,255,.55)}
+@media (min-width:768px){
+  .nav{margin:12px 0 12px 12px;border-radius:28px;width:96px;padding:18px 8px;height:calc(100% - 24px);align-self:flex-start}
+  .nav-plus{margin:4px 0 12px}
+}
+:root{--fab-b:calc(90px + env(safe-area-inset-bottom,0px))}
+@media (min-width:768px){:root{--fab-b:24px}}
+
+/* Botões e campos */
+.btn{border-radius:999px;min-height:46px;padding:0 20px;background:rgba(255,255,255,.05);font-weight:600}
+.btn.lime{background:var(--lime-grad);border-color:transparent;color:var(--lime-ink);box-shadow:0 8px 24px rgba(198,239,74,.20),inset 0 1px 0 rgba(255,255,255,.55)}
+.btn.ghost{background:transparent}
+.big-cta{border-radius:999px;min-height:56px}
+.icon-b{border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.035)}
+.input{border-radius:16px;background:rgba(255,255,255,.035)}
+.input:focus{box-shadow:0 0 0 4px rgba(198,239,74,.12)}
+.fbtn{background:rgba(255,255,255,.035)}
+.seg{border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.seg button{border-radius:999px}
+.seg button.on{background:var(--lime-grad);color:var(--lime-ink)}
+
+/* Cartões: oliva escuro com leve brilho no topo e borda fina */
+.song,.rcard,.card,.member,.sl-item,.orow,.opt,.dcard,.note{background:var(--card-grad),var(--surface);border:1px solid var(--line)}
+.song,.rcard,.card,.member,.sl-item{border-radius:var(--r)}
+.song:hover,.rcard:hover,button.card:hover,.opt:hover:not(:disabled){border-color:rgba(198,239,74,.45)}
+.note{border-style:solid;border-radius:16px}
+.keytile{background:rgba(198,239,74,.09);border:1px solid rgba(198,239,74,.16);border-radius:16px}
+.opt .oi{border-radius:50%;background:rgba(198,239,74,.08)}
+.opt.lime .oi,.mode-card .oi{background:var(--lime-grad);color:var(--lime-ink);border-radius:50%}
+.orow.on{background:rgba(198,239,74,.08)}
+.pill{border-radius:999px}
+
+/* Telas de entrada (escolha do modo e conta) */
+.mode-in h1,.auth-in h1{font-size:40px}
+@media (min-width:768px){.mode-in h1{font-size:52px}}
+.mode-card{border-radius:28px;background:
+  radial-gradient(320px 180px at 0% 0%, rgba(198,239,74,.10), transparent 70%), var(--card-grad), var(--surface);min-height:230px}
+.mode-card b{font-size:22px;font-weight:600;letter-spacing:-.015em}
+@media (min-width:900px){.auth-side{background:radial-gradient(500px 360px at 20% 20%, rgba(198,239,74,.14), transparent 70%), rgba(255,255,255,.02)}}
+.auth-sso{border-radius:999px}
+
+/* Cabeçalhos fixos e camadas sobre a cifra: vidro escuro */
+.topbar,.vhead{background:rgba(7,10,6,.72);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.vhead .topbar{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
+.modal{background:linear-gradient(180deg,#151C11,#0E130B);border-color:var(--line)}
+@media (min-width:768px){.modal{border-radius:28px}}
+.pop{background:rgba(18,24,15,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-radius:26px}
+.fab{border-radius:50%;background:var(--lime-grad);box-shadow:0 0 0 6px rgba(198,239,74,.10),0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.fab.open{background:#1A2116}
+.mini{border-radius:50%;background:rgba(26,33,22,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.keypill{border-radius:999px;background:rgba(255,255,255,.04)}
+.edstrip .tb,.nb{border-radius:50%;background:rgba(255,255,255,.05)}
+.nb{border-radius:999px}
+.edstrip .tb.on,.nb.on,.step button.on{background:var(--lime-grad);color:var(--lime-ink)}
+.step button{border-radius:50%;background:rgba(255,255,255,.05)}
+.stagebar{background:rgba(12,16,10,.88);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.stagebar .nx,.stagebar .pv{border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.layer-tag{border-radius:999px}
+.switch.on{background:var(--lime-grad)}
+.toast{border-radius:999px;background:var(--lime-grad);color:var(--lime-ink)}
+.banner{border-radius:16px}
 </style>
 
 <div class="app" id="app">
@@ -391,6 +487,8 @@ const P = {
   sort:'<path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M14 6h7M14 11h5M14 16h3"/>'
 };
 const ic = (n, c='') => `<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+/* Logo do Octave (assets/logo_octave.png) redesenhado em vetor: nota em traço arredondado sobre o limão */
+const LOGO = `<svg class="logo" viewBox="0 0 1000 1000" role="img" aria-label="Octave"><rect width="1000" height="1000" rx="220" fill="#C1EC46"/><g fill="none" stroke="#0A0D06" stroke-linecap="round" stroke-linejoin="round"><circle cx="402" cy="683" r="97" stroke-width="64"/><path d="M497 690 566 214 695 239" stroke-width="62"/></g></svg>`;
 const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 
 /* ---------- Música: acordes e transposição ---------- */
@@ -805,7 +903,7 @@ const NAVS = {
 };
 function renderNav(){
   const b = ([t, icon, label]) => `<button class="nav-b ${S.tab===t?'on':''}" data-act="tab" data-v="${t}" aria-label="${label}">${ic(icon)}<span>${label}</span></button>`;
-  nav.innerHTML = `<div class="nav-brand">OCTAVE</div>` + (NAVS[DB.mode] || NAVS.estudo).map(it => it==='+' ? `<button class="nav-plus" data-act="create" aria-label="Adicionar música">${ic('plus')}</button>` : b(it)).join('');
+  nav.innerHTML = `<div class="nav-brand">${LOGO}<span>Octave</span></div>` + (NAVS[DB.mode] || NAVS.estudo).map(it => it==='+' ? `<button class="nav-plus" data-act="create" aria-label="Adicionar música">${ic('plus')}</button>` : b(it)).join('');
 }
 function render(){
   // Ordem de entrada: conta (entrar → código → primeiro acesso) → escolha do modo → app
@@ -872,8 +970,9 @@ SCREENS.auth = () => {
         <button class="btn ghost block" data-act="resend">Não chegou? Reenviar código</button>
         ${sb ? '<p class="sub" style="text-align:center">Não achou? Olhe na caixa de spam ou de promoções.</p>' : '<div class="note">Protótipo: nenhum e-mail é enviado. Digite quaisquer 6 números.</div>'}</div>`;
   } else {
-    body = `<div class="label" style="color:var(--lime)">${sb ? 'Octave · versão de teste' : 'Octave · protótipo'}</div>
-      <h1>Sua cifra, do estudo ao palco.</h1>
+    body = `<div class="brand" style="margin-bottom:22px">${LOGO}<span>Octave</span></div>
+      <div class="label" style="color:var(--lime)">${sb ? 'Versão de teste' : 'Protótipo'}</div>
+      <h1>Sua cifra, do estudo ao <em>palco.</em></h1>
       <p class="sub">Entre para guardar suas músicas, tocar com a banda e ter tudo em qualquer aparelho. Sem senha para lembrar.</p>
       <div class="stack" style="margin-top:22px">
         <button class="btn block auth-sso" data-act="sso" data-v="google">${ic('globe','sm')} Continuar com Google</button>
@@ -893,8 +992,9 @@ SCREENS.mode = () => {
     <span class="oi">${ic(icon)}</span><b>${t}</b><span>${d}</span>
     <span class="mode-tabs">${DB.mode===v?'<span class="pill lime" style="margin-right:6px">Último usado</span>':''}${tabs}</span></button>`;
   return `<div class="mode-wrap"><div class="mode-in">
-    <div class="label" style="color:var(--lime)">${DB.user?.guest && (LOGIN_ON || DB.user.name === 'Você') ? 'Octave' : 'Oi, ' + esc(DB.user?.name || '')}</div>
-    <h1>Como você vai tocar hoje?</h1>
+    <div class="brand" style="margin-bottom:26px">${LOGO}<span>Octave</span></div>
+    <div class="label" style="color:var(--lime)">${DB.user?.guest && (LOGIN_ON || DB.user.name === 'Você') ? 'Bem-vindo' : 'Oi, ' + esc(DB.user?.name || '')}</div>
+    <h1>Como você vai tocar <em>hoje?</em></h1>
     <p class="sub">Dá para trocar depois, no Perfil.</p>
     <div class="mode-grid">
       ${m('estudo','lib','Modo estudo','Consultar, treinar e anotar sozinho.','Biblioteca · Recentes · Minhas')}

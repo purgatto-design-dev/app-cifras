@@ -32,9 +32,15 @@ troca de tom, caneta/borracha, rolagem automática, modo palco solo offline.
 Bandas e tempo real ficam na v2, e partitura na v3. O detalhe está em `specs/app.md`.
 
 ## Visual
-Referências em `referencias/` (só inspiração, não entram no app).
-- Fundo quase preto, ação em verde-limão `#D5FF40`, cinza `#C0C2B8`, branco `#FFFFFF`.
-- Tipografia **Poppins** (Regular, SemiBold, Bold).
+Referências em `referencias/` (só inspiração, não entram no app). **Visual atualizado em 2026-11-12** (substitui
+Poppins e o preto chapado com `#D5FF40`):
+- **Logo:** `assets/logo_octave.png` (nota em traço arredondado, preta, sobre limão). No app vai em vetor; os
+  ícones do site (`web/icons/`) são gerados a partir dele.
+- **Cores:** fundo preto-esverdeado `#070A06` com brilhos suaves (limão no alto, esmeralda embaixo); cartões
+  oliva `#12170F` com borda fina; limão do logo `#C1EC46` em degradê nos botões principais; texto `#F3F6EC`.
+- **Tipografia:** **Funnel Display** na interface (títulos grandes, letras juntas). A cifra continua em
+  **JetBrains Mono**, porque só a fonte mono mantém o acorde sobre a sílaba.
+- **Formas:** pílulas (botões, abas, barra de baixo flutuante), cartões arredondados, ＋ em círculo limão com brilho.
 - Ícones de traço com cantos e pontas arredondados: **contorno** no uso geral, **preenchido** em botões e
   ações de destaque.
 - Tema escuro favorece o palco. Os acordes em limão sobre o preto precisam passar no teste de leitura à distância.

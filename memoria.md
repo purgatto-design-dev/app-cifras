@@ -65,6 +65,12 @@
   salvas no aparelho/navegador. Nome e instrumentos no Perfil. O login com Supabase continua no código
   (`LOGIN_ON = false`) para ligar com calma depois.
 
+- 2026-11-12: **novo visual e logo** (pedido do Rafa, com referências de app escuro verde/limão e o pôster da
+  Funnel Display): substitui Poppins e o preto chapado com `#D5FF40`. Funnel Display na interface, cifra
+  continua em JetBrains Mono (alinhamento). Fundo preto-esverdeado com brilhos, cartões oliva, limão do logo
+  em degradê, pílulas, barra flutuante. Logo `assets/logo_octave.png` em vetor no app e ícones do site gerados
+  dele (favicon, tela de início, manifesto). Detalhes no brief (Visual).
+
 ## Decisões rejeitadas
 
 ## Alterações realizadas
