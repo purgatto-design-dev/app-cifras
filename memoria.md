@@ -88,6 +88,11 @@
 - Decisões de design do protótipo: cifra em fonte mono (JetBrains Mono) para o acorde ficar alinhado sobre a
   letra; Poppins na interface; acordes em limão; partes da música como etiquetas cinza `#C0C2B8`.
 
+- 2026-11-12: **versão de teste no ar:** https://app-cifras-six.vercel.app (GitHub purgatto-design-dev/app-cifras,
+  privado; Vercel time purgatto-design, Hobby; Supabase `app-cifras` na organização IEVC, sa-east-1, gratuito).
+  Tabela `user_data` com RLS (testado: sem login não lê nada; verificador de segurança sem avisos).
+  Cada `git push` na main publica sozinho. O conector da Vercel aqui não tem acesso ao time; uso o CLI logado.
+
 ## Problemas encontrados
 - 2026-11-12: na v2, a tela de estudo escondia a barra como se fosse o palco (`classList.toggle` recebia
   `undefined` e alternava em vez de desligar). Corrigido antes de publicar; testado em 375px e 1280px.

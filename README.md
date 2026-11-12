@@ -12,6 +12,10 @@ Uma única fonte, `prototipo/index.html`, publicada de dois jeitos:
 - Para publicar de novo, mantenha o mesmo arquivo: o link continua o mesmo.
 
 ## Versão de teste (Vercel + Supabase)
+- **Endereço:** https://app-cifras-six.vercel.app (atenção: `app-cifras.vercel.app`, sem "-six", é de outra pessoa)
+- GitHub: https://github.com/purgatto-design-dev/app-cifras (privado). Todo `git push` na `main` publica sozinho.
+- Vercel: time `purgatto-design`, projeto `app-cifras` (plano Hobby, gratuito).
+- Supabase: projeto `app-cifras` (`cqbjdotzvfmmaqyuseet`), organização IEVC, São Paulo, plano gratuito.
 - `scripts/build-web.mjs` monta `dist/index.html` a partir do protótipo, com o cabeçalho de documento,
   o cliente da Supabase (CDN, versão fixa) e a configuração pública. Sem `npm install`.
 - Variáveis de ambiente (na Vercel; localmente num `.env`, que nunca vai para o git):
