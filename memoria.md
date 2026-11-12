@@ -61,6 +61,10 @@
   (título, barra lateral, telas de entrada, ícone da tela de início). O slug `app-cifras` (pasta, GitHub, Vercel,
   Supabase, endereço) fica para depois do ensaio, para não derrubar o link em uso.
 
+- 2026-11-12: **login desligado por enquanto** (decisão do Rafa): o app abre direto, sem conta, e as cifras ficam
+  salvas no aparelho/navegador. Nome e instrumentos no Perfil. O login com Supabase continua no código
+  (`LOGIN_ON = false`) para ligar com calma depois.
+
 ## Decisões rejeitadas
 
 ## Alterações realizadas
@@ -123,6 +127,10 @@
   coleta automática. Consultar um advogado antes de lançar. Proposta: importação só para a biblioteca
   pessoal, com "colar texto" como caminho principal.
 - Tempo de expiração da trava de edição (definir na v2).
+- **E-mail do login (antes de ligar LOGIN_ON):** com o e-mail padrão da Supabase, o modelo não pôde ser editado
+  (chega só o link "Entrar", sem código) e ele **só entrega para membros da organização** (a banda não recebe),
+  com limite baixo por hora. Precisa de SMTP próprio (ex.: Resend, plano grátis) + modelo com `{{ .Token }}`.
+  Também: Site URL e Redirect URLs = https://app-cifras-six.vercel.app no painel da Supabase.
 - **Login de verdade:** Supabase Auth, com contas de desenvolvedor Google e Apple (o "Entrar com Apple" exige
   conta Apple Developer paga). Também faltam os textos de Termos de uso e Política de privacidade (LGPD).
 - O que acontece com os dados de quem usou "sem conta" e depois cria conta: no protótipo continuam no aparelho;
