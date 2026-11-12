@@ -1,4 +1,4 @@
-# App de cifras (nome provisório)
+# Octave (nome provisório; antes "app de cifras")
 
 > Brief deste app. As regras do Estúdio Apps (`../../CLAUDE.md`) e da casa valem aqui.
 > Slug provisório `app-cifras`: troca quando o nome for criado (no Estúdio Marca).

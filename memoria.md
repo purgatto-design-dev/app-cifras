@@ -57,6 +57,10 @@
 - 2026-11-12: **visualizador:** ajustes (tom, capo, letra, rolagem, editar) num botão no canto inferior direito.
   Na edição, desfazer/refazer aparecem ao lado dele só depois de desenhar.
 
+- 2026-11-12: **nome provisório do app: Octave** (escolha do Rafa, "por enquanto"). Trocado só onde aparece no app
+  (título, barra lateral, telas de entrada, ícone da tela de início). O slug `app-cifras` (pasta, GitHub, Vercel,
+  Supabase, endereço) fica para depois do ensaio, para não derrubar o link em uso.
+
 ## Decisões rejeitadas
 
 ## Alterações realizadas

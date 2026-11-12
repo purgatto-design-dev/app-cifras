@@ -1,4 +1,4 @@
-<title>App de Cifras</title>
+<title>Octave</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -799,7 +799,7 @@ const NAVS = {
 };
 function renderNav(){
   const b = ([t, icon, label]) => `<button class="nav-b ${S.tab===t?'on':''}" data-act="tab" data-v="${t}" aria-label="${label}">${ic(icon)}<span>${label}</span></button>`;
-  nav.innerHTML = `<div class="nav-brand">CIFRAS</div>` + (NAVS[DB.mode] || NAVS.estudo).map(it => it==='+' ? `<button class="nav-plus" data-act="create" aria-label="Adicionar música">${ic('plus')}</button>` : b(it)).join('');
+  nav.innerHTML = `<div class="nav-brand">OCTAVE</div>` + (NAVS[DB.mode] || NAVS.estudo).map(it => it==='+' ? `<button class="nav-plus" data-act="create" aria-label="Adicionar música">${ic('plus')}</button>` : b(it)).join('');
 }
 function render(){
   // Ordem de entrada: conta (entrar → código → primeiro acesso) → escolha do modo → app
@@ -863,7 +863,7 @@ SCREENS.auth = () => {
         <button class="btn ghost block" data-act="resend">Não chegou? Reenviar código</button>
         ${sb ? '<p class="sub" style="text-align:center">Não achou? Olhe na caixa de spam ou de promoções.</p>' : '<div class="note">Protótipo: nenhum e-mail é enviado. Digite quaisquer 6 números.</div>'}</div>`;
   } else {
-    body = `<div class="label" style="color:var(--lime)">${sb ? 'Cifras · versão de teste' : 'Cifras · protótipo'}</div>
+    body = `<div class="label" style="color:var(--lime)">${sb ? 'Octave · versão de teste' : 'Octave · protótipo'}</div>
       <h1>Sua cifra, do estudo ao palco.</h1>
       <p class="sub">Entre para guardar suas músicas, tocar com a banda e ter tudo em qualquer aparelho. Sem senha para lembrar.</p>
       <div class="stack" style="margin-top:22px">
@@ -884,7 +884,7 @@ SCREENS.mode = () => {
     <span class="oi">${ic(icon)}</span><b>${t}</b><span>${d}</span>
     <span class="mode-tabs">${DB.mode===v?'<span class="pill lime" style="margin-right:6px">Último usado</span>':''}${tabs}</span></button>`;
   return `<div class="mode-wrap"><div class="mode-in">
-    <div class="label" style="color:var(--lime)">${DB.user?.guest ? 'Cifras · sem conta' : 'Oi, ' + esc(DB.user?.name || '')}</div>
+    <div class="label" style="color:var(--lime)">${DB.user?.guest ? 'Octave · sem conta' : 'Oi, ' + esc(DB.user?.name || '')}</div>
     <h1>Como você vai tocar hoje?</h1>
     <p class="sub">Dá para trocar depois, no Perfil.</p>
     <div class="mode-grid">
