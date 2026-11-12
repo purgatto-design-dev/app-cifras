@@ -46,6 +46,11 @@
 - 2026-11-12: **partitura no protótipo agora, no app continua na v3** (escolha do Rafa). Só **pauta simples** por
   enquanto (pauta + tablatura, pauta dupla de piano e bateria ficaram de fora). Referência: papel pautado com
   linhas de título e 10 pautas.
+- 2026-11-12: **publicar como o outro app do Rafa: GitHub + Vercel + Supabase**, em duas etapas.
+  Etapa 1 (para o ensaio): o protótipo atual na Vercel, com login real por código de e-mail e as cifras salvas
+  na conta (tabela `user_data`, um JSON por conta, com RLS). Etapa 2: construção em Vite + React com a mesma
+  Supabase e a mesma Vercel. **Projeto novo na Supabase** só para este app. Google/Apple ficam "em breve"
+  na versão online. O link do claude.ai continua simulado.
 - 2026-11-12: **Minhas** = tudo do usuário: criadas do zero, com texto editado ou com anotações.
 - 2026-11-12: **Biblioteca** mostra "Estudadas recentemente" + músicas salvas. Filtros viram botões que abrem
   popup (o Rafa não gostou da faixa de filtros com rolagem lateral, que esconde opções).
