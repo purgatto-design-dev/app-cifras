@@ -857,7 +857,7 @@ SCREENS.auth = () => {
       <h1 style="margin-top:6px">Confira seu e-mail</h1>
       <p class="sub">Mandamos um código de ${OTP_LEN} números para <b style="color:var(--text)">${esc(a.email)}</b>. Ele vale por 10 minutos.</p>
       <div class="stack" style="margin-top:20px">
-        <div class="field"><label for="a-code">Código</label><input class="input code-in" id="a-code" inputmode="numeric" autocomplete="one-time-code" maxlength="${OTP_LEN}" pattern="[0-9]*" placeholder="${'•'.repeat(OTP_LEN)}"></div>
+        <div class="field"><label for="a-code">Código</label><input class="input code-in" id="a-code" inputmode="numeric" autocomplete="one-time-code" maxlength="${sb ? 10 : OTP_LEN}" pattern="[0-9]*" placeholder="${'•'.repeat(OTP_LEN)}"></div>
         ${a.err ? `<p class="aerr" role="alert">${a.err}</p>` : ''}
         <button class="btn lime block big-cta" data-act="verifycode" ${a.busy?'disabled':''}>${a.busy ? '<span class="spin sm"></span> Conferindo…' : 'Entrar'}</button>
         <button class="btn ghost block" data-act="resend">Não chegou? Reenviar código</button>
@@ -1791,7 +1791,7 @@ const A = {
     if(sb){ const {error} = await sb.auth.signInWithOtp({email:S.auth.email}); if(error){ S.auth.err = authErr(error); render(); } else toast('Código reenviado para ' + S.auth.email); return; }
     toast('Simulado: código reenviado para ' + S.auth.email); },
   verifycode: async () => { const v = document.getElementById('a-code').value.replace(/\D/g,'');
-    if(v.length !== OTP_LEN){ S.auth.err = `O código tem ${OTP_LEN} números.`; render(); document.getElementById('a-code')?.focus(); return; }
+    if(sb ? (v.length < 6 || v.length > 10) : v.length !== OTP_LEN){ S.auth.err = `O código tem ${OTP_LEN} números.`; render(); document.getElementById('a-code')?.focus(); return; }
     S.auth.busy = true; render();
     if(sb){
       const {data, error} = await sb.auth.verifyOtp({email:S.auth.email, token:v, type:'email'});
